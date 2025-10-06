@@ -1,1323 +1,362 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VectorPro - Vectorización Profesional para Sublimación</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/potrace@2.1.2/dist/potrace.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.min.js"></script>
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --success: #2ecc71;
-            --warning: #f39c12;
-            --light: #ecf0f1;
-            --dark: #34495e;
-            --text: #333;
-            --text-light: #7f8c8d;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-        
-        header {
-            background: var(--primary);
-            color: white;
-            padding: 1.2rem 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .logo h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-        
-        .logo span {
-            color: var(--secondary);
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-        }
-        
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .nav-links a:hover {
-            color: var(--secondary);
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 20px;
-        }
-        
-        .app-container {
-            display: grid;
-            grid-template-columns: 320px 1fr 320px;
-            gap: 1.5rem;
-            min-height: 70vh;
-        }
-        
-        .panel {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .panel-header {
-            background: var(--dark);
-            color: white;
-            padding: 1rem 1.5rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .panel-content {
-            padding: 1.5rem;
-            flex: 1;
-            overflow-y: auto;
-        }
-        
-        .upload-area {
-            border: 2px dashed var(--secondary);
-            border-radius: 8px;
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 1.5rem;
-            background: rgba(52, 152, 219, 0.05);
-        }
-        
-        .upload-area:hover {
-            background: rgba(52, 152, 219, 0.1);
-            border-color: var(--primary);
-        }
-        
-        .upload-icon {
-            font-size: 3rem;
-            color: var(--secondary);
-            margin-bottom: 1rem;
-        }
-        
-        .btn {
-            display: inline-block;
-            background: var(--secondary);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            text-align: center;
-            text-decoration: none;
-        }
-        
-        .btn:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .btn-block {
-            display: block;
-            width: 100%;
-        }
-        
-        .btn-accent {
-            background: var(--accent);
-        }
-        
-        .btn-accent:hover {
-            background: #c0392b;
-        }
-        
-        .btn-success {
-            background: var(--success);
-        }
-        
-        .btn-success:hover {
-            background: #27ae60;
-        }
-        
-        .btn-warning {
-            background: var(--warning);
-        }
-        
-        .btn-warning:hover {
-            background: #e67e22;
-        }
-        
-        .control-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .control-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .slider {
-            flex: 1;
-            -webkit-appearance: none;
-            height: 6px;
-            border-radius: 3px;
-            background: #ddd;
-            outline: none;
-        }
-        
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--secondary);
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        
-        .slider-value {
-            min-width: 40px;
-            text-align: center;
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .checkbox-group input {
-            width: 18px;
-            height: 18px;
-        }
-        
-        .preview-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #f9f9f9;
-        }
-        
-        .preview-header {
-            background: var(--light);
-            padding: 0.8rem 1rem;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .preview-content {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: auto;
-            padding: 1rem;
-        }
-        
-        .preview-image {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-        
-        .canvas-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-        
-        #previewCanvas {
-            max-width: 100%;
-            max-height: 100%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .toolbar {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        .tool-btn {
-            padding: 0.5rem 1rem;
-            background: var(--light);
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .tool-btn:hover {
-            background: #dde4e6;
-        }
-        
-        .tool-btn.active {
-            background: var(--secondary);
-            color: white;
-        }
-        
-        .file-info {
-            background: var(--light);
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1rem;
-        }
-        
-        .file-info p {
-            margin-bottom: 0.3rem;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .file-info span {
-            font-weight: 600;
-        }
-        
-        .color-palette {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        .color-swatch {
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        .color-swatch:hover {
-            transform: scale(1.1);
-        }
-        
-        .progress-container {
-            margin-top: 1rem;
-            background: #f0f0f0;
-            border-radius: 4px;
-            overflow: hidden;
-            height: 8px;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: var(--secondary);
-            width: 0%;
-            transition: width 0.3s;
-        }
-        
-        .results-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .result-item {
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        
-        .result-header {
-            background: var(--light);
-            padding: 0.8rem 1rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .result-content {
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-        }
-        
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            background: var(--success);
-            color: white;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 1000;
-        }
-        
-        .notification.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-        
-        .modal.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90%;
-            overflow: auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-body {
-            padding: 1.5rem;
-        }
-        
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-light);
-        }
-        
-        .product-preview {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
-        .product-image {
-            width: 300px;
-            height: 300px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            position: relative;
-        }
-        
-        .product-design {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-width: 80%;
-            max-height: 80%;
-        }
-        
-        footer {
-            background: var(--primary);
-            color: white;
-            text-align: center;
-            padding: 1.5rem 0;
-            margin-top: 2rem;
-        }
-        
-        @media (max-width: 1200px) {
-            .app-container {
-                grid-template-columns: 280px 1fr;
-            }
-            
-            .panel:last-child {
-                grid-column: 1 / -1;
-                margin-top: 1.5rem;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .app-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .nav-links {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vectorizador profesional (Potrace WASM) - Sublimación</title>
+  <meta name="description" content="App simple para vectorizar imágenes en el navegador usando Potrace (wasm). Lista para GitHub Pages." />
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#06b6d4}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Helvetica,Arial}
+    body{background:linear-gradient(180deg,#071028 0%, #071826 100%);color:#e6eef6;padding:24px}
+    .container{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;gap:16px}
+    h1{font-size:20px;margin:0}
+    .card{background:rgba(255,255,255,0.02);padding:16px;border-radius:12px;margin-top:16px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
+    .controls label{display:block;margin-top:8px;font-size:13px;color:var(--muted)}
+    input[type=file]{width:100%}
+    .preview{display:flex;flex-direction:column;gap:8px}
+    canvas, img#sourceImage{max-width:100%;border-radius:8px;background:#fff}
+    #svgPreview{background:#fff;padding:8px;border-radius:8px;min-height:200px}
+    .row{display:flex;gap:8px;align-items:center}
+    button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:#012;cursor:pointer}
+    button:disabled{opacity:0.4;cursor:not-allowed}
+    .muted{color:var(--muted);font-size:13px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    .inline-input{width:72px}
+    .small{font-size:12px}
+  </style>
 </head>
 <body>
+  <div class="container">
     <header>
-        <div class="header-content">
-            <div class="logo">
-                <h1>Vector<span>Pro</span></h1>
-            </div>
-            <nav class="nav-links">
-                <a href="#">Inicio</a>
-                <a href="#">Funciones</a>
-                <a href="#">Precios</a>
-                <a href="#">Soporte</a>
-            </nav>
-        </div>
+      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='38' height='38'><rect rx='6' width='38' height='38' fill='%2306b6d4'/><text x='50%' y='54%' font-size='16' font-family='Arial' fill='white' text-anchor='middle' dominant-baseline='middle'>V</text></svg>" alt="logo" width="48" height="48">
+      <div>
+        <h1>Vectorizador para Sublimación — Potrace (WASM)</h1>
+        <div class="muted">Genera SVGs listos para impresión; exporta PNG a 300 DPI. (Revisa licencia Potrace antes de distribuir)</div>
+      </div>
     </header>
-    
-    <div class="container">
-        <div class="app-container">
-            <!-- Panel de herramientas -->
-            <div class="panel">
-                <div class="panel-header">
-                    <span>Herramientas</span>
-                </div>
-                <div class="panel-content">
-                    <div class="upload-area" id="uploadArea">
-                        <div class="upload-icon">📁</div>
-                        <p>Arrastra y suelta tu imagen aquí</p>
-                        <p>o</p>
-                        <button class="btn btn-block" id="browseBtn">Seleccionar archivo</button>
-                        <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                    </div>
-                    
-                    <div class="file-info" id="fileInfo" style="display: none;">
-                        <p>Archivo: <span id="fileName">-</span></p>
-                        <p>Tamaño: <span id="fileSize">-</span></p>
-                        <p>Dimensiones: <span id="fileDimensions">-</span></p>
-                    </div>
-                    
-                    <div class="toolbar">
-                        <button class="tool-btn" id="cropBtn" title="Recortar">✂️</button>
-                        <button class="tool-btn" id="rotateBtn" title="Rotar">🔄</button>
-                        <button class="tool-btn" id="flipHBtn" title="Voltear horizontal">↔️</button>
-                        <button class="tool-btn" id="flipVBtn" title="Voltear vertical">↕️</button>
-                        <button class="tool-btn" id="resetBtn" title="Restablecer">🔄</button>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label class="control-label">Modo de vectorización:</label>
-                        <select id="vectorMode" class="btn-block" style="padding: 0.8rem; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="auto">Automático</option>
-                            <option value="manual">Manual</option>
-                            <option value="logo">Logo</option>
-                            <option value="art">Arte</option>
-                            <option value="photo">Fotografía</option>
-                        </select>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label class="control-label" for="threshold">Umbral de detalle:</label>
-                        <div class="slider-container">
-                            <input type="range" min="1" max="100" value="60" class="slider" id="threshold">
-                            <span class="slider-value" id="thresholdValue">60</span>
-                        </div>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label class="control-label" for="smoothness">Suavizado:</label>
-                        <div class="slider-container">
-                            <input type="range" min="1" max="100" value="40" class="slider" id="smoothness">
-                            <span class="slider-value" id="smoothnessValue">40</span>
-                        </div>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label class="control-label" for="colors">Número de colores:</label>
-                        <div class="slider-container">
-                            <input type="range" min="2" max="64" value="16" class="slider" id="colors">
-                            <span class="slider-value" id="colorsValue">16</span>
-                        </div>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label class="control-label" for="details">Nivel de detalle:</label>
-                        <div class="slider-container">
-                            <input type="range" min="1" max="100" value="75" class="slider" id="details">
-                            <span class="slider-value" id="detailsValue">75</span>
-                        </div>
-                    </div>
-                    
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="removeBackground" checked>
-                        <label for="removeBackground">Eliminar fondo</label>
-                    </div>
-                    
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="smoothEdges" checked>
-                        <label for="smoothEdges">Bordes suaves</label>
-                    </div>
-                    
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="optimizePaths">
-                        <label for="optimizePaths">Optimizar trazados</label>
-                    </div>
-                    
-                    <div class="progress-container" id="progressContainer" style="display: none;">
-                        <div class="progress-bar" id="progressBar"></div>
-                    </div>
-                    
-                    <button class="btn btn-accent btn-block" id="vectorizeBtn" disabled>Vectorizar Imagen</button>
-                    
-                    <div class="color-palette" id="colorPalette">
-                        <!-- Colores generados dinámicamente -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Vista previa -->
-            <div class="panel">
-                <div class="panel-header">
-                    <span>Vista Previa</span>
-                    <div>
-                        <button class="tool-btn" id="zoomInBtn">+</button>
-                        <button class="tool-btn" id="zoomOutBtn">-</button>
-                        <button class="tool-btn" id="fitBtn">Ajustar</button>
-                    </div>
-                </div>
-                <div class="panel-content">
-                    <div class="preview-container">
-                        <div class="preview-content">
-                            <div class="canvas-container">
-                                <canvas id="previewCanvas"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Resultados y exportación -->
-            <div class="panel">
-                <div class="panel-header">
-                    <span>Resultados</span>
-                </div>
-                <div class="panel-content results-panel">
-                    <div class="result-item">
-                        <div class="result-header">
-                            <span>Vectorizado</span>
-                            <button class="btn btn-success" id="downloadSvgBtn" disabled>Descargar SVG</button>
-                        </div>
-                        <div class="result-content">
-                            <div class="preview-container" style="height: 200px;">
-                                <div class="preview-content" id="svgPreview">
-                                    <p>El resultado vectorizado aparecerá aquí</p>
-                                </div>
-                            </div>
-                            <div class="file-info">
-                                <p>Tamaño estimado: <span id="svgSize">-</span></p>
-                                <p>Número de trazados: <span id="pathsCount">-</span></p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="result-item">
-                        <div class="result-header">
-                            <span>Formatos de exportación</span>
-                        </div>
-                        <div class="result-content">
-                            <button class="btn btn-block" id="exportPngBtn" disabled>PNG</button>
-                            <button class="btn btn-block" id="exportPdfBtn" disabled>PDF</button>
-                            <button class="btn btn-block" id="exportEpsBtn" disabled>EPS</button>
-                            <button class="btn btn-block" id="exportDxfBtn" disabled>DXF</button>
-                        </div>
-                    </div>
-                    
-                    <div class="result-item">
-                        <div class="result-header">
-                            <span>Configuración para sublimación</span>
-                        </div>
-                        <div class="result-content">
-                            <div class="checkbox-group">
-                                <input type="checkbox" id="invertColors">
-                                <label for="invertColors">Invertir colores (para transfer térmico)</label>
-                            </div>
-                            <div class="checkbox-group">
-                                <input type="checkbox" id="addCutLines">
-                                <label for="addCutLines">Añadir líneas de corte</label>
-                            </div>
-                            <div class="checkbox-group">
-                                <input type="checkbox" id="addRegistration">
-                                <label for="addRegistration">Añadir marcas de registro</label>
-                            </div>
-                            <button class="btn btn-warning btn-block" id="previewShirtBtn">Vista previa en producto</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal para vista previa en camiseta -->
-    <div class="modal" id="shirtModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Vista previa en producto</h2>
-                <button class="close-btn" id="closeShirtModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align: center; margin-bottom: 1rem;">
-                    <select id="productType" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ddd;">
-                        <option value="tshirt">Camiseta</option>
-                        <option value="hoodie">Hoodie</option>
-                        <option value="mug">Taza</option>
-                        <option value="cap">Gorra</option>
-                    </select>
-                    <select id="productColor" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ddd; margin-left: 0.5rem;">
-                        <option value="white">Blanco</option>
-                        <option value="black">Negro</option>
-                        <option value="red">Rojo</option>
-                        <option value="blue">Azul</option>
-                    </select>
-                </div>
-                <div class="product-preview">
-                    <div class="product-image" id="productImage">
-                        <div id="productDesign" class="product-design"></div>
-                    </div>
-                    <button class="btn btn-accent" id="saveProductPreview">Guardar vista previa</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="notification" id="notification">¡Operación completada!</div>
-    
-    <footer>
-        <div class="container">
-            <p>VectorPro - Herramienta profesional de vectorización para sublimación &copy; 2023</p>
-        </div>
-    </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elementos DOM
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('fileInput');
-            const browseBtn = document.getElementById('browseBtn');
-            const fileInfo = document.getElementById('fileInfo');
-            const fileName = document.getElementById('fileName');
-            const fileSize = document.getElementById('fileSize');
-            const fileDimensions = document.getElementById('fileDimensions');
-            const vectorizeBtn = document.getElementById('vectorizeBtn');
-            const previewCanvas = document.getElementById('previewCanvas');
-            const svgPreview = document.getElementById('svgPreview');
-            const downloadSvgBtn = document.getElementById('downloadSvgBtn');
-            const progressContainer = document.getElementById('progressContainer');
-            const progressBar = document.getElementById('progressBar');
-            const notification = document.getElementById('notification');
-            const shirtModal = document.getElementById('shirtModal');
-            const closeShirtModal = document.getElementById('closeShirtModal');
-            const previewShirtBtn = document.getElementById('previewShirtBtn');
-            const colorPalette = document.getElementById('colorPalette');
-            const productImage = document.getElementById('productImage');
-            const productDesign = document.getElementById('productDesign');
-            const productType = document.getElementById('productType');
-            const productColor = document.getElementById('productColor');
-            const saveProductPreview = document.getElementById('saveProductPreview');
-            
-            // Controles deslizantes
-            const thresholdSlider = document.getElementById('threshold');
-            const smoothnessSlider = document.getElementById('smoothness');
-            const colorsSlider = document.getElementById('colors');
-            const detailsSlider = document.getElementById('details');
-            const thresholdValue = document.getElementById('thresholdValue');
-            const smoothnessValue = document.getElementById('smoothnessValue');
-            const colorsValue = document.getElementById('colorsValue');
-            const detailsValue = document.getElementById('detailsValue');
-            
-            // Botones de herramientas
-            const cropBtn = document.getElementById('cropBtn');
-            const rotateBtn = document.getElementById('rotateBtn');
-            const flipHBtn = document.getElementById('flipHBtn');
-            const flipVBtn = document.getElementById('flipVBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const zoomInBtn = document.getElementById('zoomInBtn');
-            const zoomOutBtn = document.getElementById('zoomOutBtn');
-            const fitBtn = document.getElementById('fitBtn');
-            
-            // Botones de exportación
-            const exportPngBtn = document.getElementById('exportPngBtn');
-            const exportPdfBtn = document.getElementById('exportPdfBtn');
-            const exportEpsBtn = document.getElementById('exportEpsBtn');
-            const exportDxfBtn = document.getElementById('exportDxfBtn');
-            
-            // Variables de estado
-            let currentImage = null;
-            let originalImage = null;
-            let canvas = null;
-            let vectorizedSVG = null;
-            let currentZoom = 1;
-            
-            // Inicializar canvas de Fabric.js
-            canvas = new fabric.Canvas('previewCanvas', {
-                backgroundColor: '#f9f9f9',
-                preserveObjectStacking: true,
-                width: 600,
-                height: 400
-            });
-            
-            // Configurar eventos para los controles deslizantes
-            thresholdSlider.addEventListener('input', function() {
-                thresholdValue.textContent = this.value;
-            });
-            
-            smoothnessSlider.addEventListener('input', function() {
-                smoothnessValue.textContent = this.value;
-            });
-            
-            colorsSlider.addEventListener('input', function() {
-                colorsValue.textContent = this.value;
-            });
-            
-            detailsSlider.addEventListener('input', function() {
-                detailsValue.textContent = this.value;
-            });
-            
-            // Configurar eventos para la carga de archivos
-            browseBtn.addEventListener('click', function() {
-                fileInput.click();
-            });
-            
-            fileInput.addEventListener('change', function(e) {
-                if (e.target.files.length > 0) {
-                    handleFile(e.target.files[0]);
-                }
-            });
-            
-            // Configurar eventos para el área de arrastrar y soltar
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, preventDefaults, false);
-            });
-            
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, highlight, false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, unhighlight, false);
-            });
-            
-            function highlight() {
-                uploadArea.style.backgroundColor = 'rgba(52, 152, 219, 0.15)';
-                uploadArea.style.borderColor = '#2c3e50';
-            }
-            
-            function unhighlight() {
-                uploadArea.style.backgroundColor = 'rgba(52, 152, 219, 0.05)';
-                uploadArea.style.borderColor = '#3498db';
-            }
-            
-            uploadArea.addEventListener('drop', function(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                
-                if (files.length > 0) {
-                    handleFile(files[0]);
-                }
-            });
-            
-            // Función para manejar el archivo seleccionado
-            function handleFile(file) {
-                // Verificar que sea una imagen
-                if (!file.type.match('image.*')) {
-                    showNotification('Por favor, selecciona un archivo de imagen válido.', 'error');
-                    return;
-                }
-                
-                // Actualizar la información del archivo
-                fileName.textContent = file.name;
-                fileSize.textContent = (file.size / 1024).toFixed(2) + ' KB';
-                fileInfo.style.display = 'block';
-                
-                // Cargar imagen en el canvas
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    fabric.Image.fromURL(e.target.result, function(img) {
-                        // Limpiar canvas
-                        canvas.clear();
-                        
-                        // Escalar imagen para que quepa en el canvas
-                        const maxWidth = 550;
-                        const maxHeight = 350;
-                        
-                        let scale = 1;
-                        if (img.width > maxWidth || img.height > maxHeight) {
-                            scale = Math.min(maxWidth / img.width, maxHeight / img.height);
-                        }
-                        
-                        img.scale(scale);
-                        
-                        // Centrar imagen en el canvas
-                        canvas.centerObject(img);
-                        canvas.add(img);
-                        canvas.renderAll();
-                        
-                        // Guardar referencia a la imagen
-                        currentImage = img;
-                        originalImage = fabric.util.object.clone(img);
-                        
-                        // Actualizar información de dimensiones
-                        fileDimensions.textContent = `${Math.round(img.width * scale)} × ${Math.round(img.height * scale)} px`;
-                        
-                        // Habilitar botón de vectorización
-                        vectorizeBtn.disabled = false;
-                        
-                        // Generar paleta de colores
-                        generateColorPalette(img);
-                    });
-                };
-                reader.readAsDataURL(file);
-            }
-            
-            // Función para generar paleta de colores
-            function generateColorPalette(img) {
-                // Crear imagen temporal para análisis de color
-                const tempCanvas = document.createElement('canvas');
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = img.width;
-                tempCanvas.height = img.height;
-                
-                // Dibujar la imagen en el canvas temporal
-                tempCtx.drawImage(img._element, 0, 0);
-                
-                try {
-                    const colorThief = new ColorThief();
-                    const palette = colorThief.getPalette(tempCanvas, 8); // Obtener 8 colores principales
-                    
-                    colorPalette.innerHTML = '';
-                    palette.forEach(color => {
-                        const hexColor = rgbToHex(color[0], color[1], color[2]);
-                        const swatch = document.createElement('div');
-                        swatch.className = 'color-swatch';
-                        swatch.style.backgroundColor = hexColor;
-                        swatch.title = hexColor;
-                        colorPalette.appendChild(swatch);
-                    });
-                } catch (e) {
-                    console.log('Error generando paleta de colores:', e);
-                }
-            }
-            
-            // Función para convertir RGB a HEX
-            function rgbToHex(r, g, b) {
-                return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-            }
-            
-            // Configurar eventos para herramientas de edición
-            cropBtn.addEventListener('click', function() {
-                showNotification('Modo recorte activado. Arrastra para seleccionar el área.', 'info');
-            });
-            
-            rotateBtn.addEventListener('click', function() {
-                if (currentImage) {
-                    currentImage.rotate((currentImage.angle + 90) % 360);
-                    canvas.centerObject(currentImage);
-                    canvas.renderAll();
-                    showNotification('Imagen rotada 90°', 'success');
-                }
-            });
-            
-            flipHBtn.addEventListener('click', function() {
-                if (currentImage) {
-                    currentImage.set('flipX', !currentImage.flipX);
-                    canvas.renderAll();
-                    showNotification('Imagen volteada horizontalmente', 'success');
-                }
-            });
-            
-            flipVBtn.addEventListener('click', function() {
-                if (currentImage) {
-                    currentImage.set('flipY', !currentImage.flipY);
-                    canvas.renderAll();
-                    showNotification('Imagen volteada verticalmente', 'success');
-                }
-            });
-            
-            resetBtn.addEventListener('click', function() {
-                if (originalImage) {
-                    canvas.clear();
-                    const img = fabric.util.object.clone(originalImage);
-                    canvas.add(img);
-                    canvas.centerObject(img);
-                    canvas.renderAll();
-                    currentImage = img;
-                    showNotification('Imagen restablecida', 'success');
-                }
-            });
-            
-            // Configurar eventos para zoom
-            zoomInBtn.addEventListener('click', function() {
-                currentZoom += 0.1;
-                applyZoom();
-            });
-            
-            zoomOutBtn.addEventListener('click', function() {
-                currentZoom = Math.max(0.1, currentZoom - 0.1);
-                applyZoom();
-            });
-            
-            fitBtn.addEventListener('click', function() {
-                currentZoom = 1;
-                applyZoom();
-            });
-            
-            function applyZoom() {
-                if (currentImage) {
-                    const originalScaleX = originalImage.scaleX;
-                    const originalScaleY = originalImage.scaleY;
-                    
-                    currentImage.set({
-                        scaleX: originalScaleX * currentZoom,
-                        scaleY: originalScaleY * currentZoom
-                    });
-                    
-                    canvas.centerObject(currentImage);
-                    canvas.renderAll();
-                }
-            }
-            
-            // Configurar evento para el botón de vectorizar
-            vectorizeBtn.addEventListener('click', function() {
-                if (!currentImage) return;
-                
-                // Mostrar progreso
-                progressContainer.style.display = 'block';
-                progressBar.style.width = '0%';
-                
-                // Simular progreso
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += Math.random() * 10;
-                    if (progress >= 100) {
-                        progress = 100;
-                        clearInterval(interval);
-                        progressBar.style.width = '100%';
-                        
-                        // Vectorizar imagen
-                        vectorizeImage();
-                    } else {
-                        progressBar.style.width = progress + '%';
-                    }
-                }, 100);
-            });
-            
-            // Función para vectorizar la imagen usando Potrace
-            function vectorizeImage() {
-                try {
-                    // Crear un canvas temporal para procesar la imagen
-                    const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
-                    
-                    // Establecer dimensiones
-                    tempCanvas.width = currentImage.getScaledWidth();
-                    tempCanvas.height = currentImage.getScaledHeight();
-                    
-                    // Dibujar la imagen en el canvas temporal
-                    tempCtx.drawImage(currentImage._element, 0, 0, tempCanvas.width, tempCanvas.height);
-                    
-                    // Obtener los datos de la imagen
-                    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-                    
-                    // Crear una nueva imagen para Potrace
-                    const img = new Image();
-                    img.onload = function() {
-                        // Configurar Potrace
-                        const potrace = new Potrace();
-                        
-                        // Configurar parámetros basados en los controles
-                        const threshold = thresholdSlider.value;
-                        const smoothness = smoothnessSlider.value;
-                        
-                        potrace.setParameter({
-                            threshold: threshold,
-                            turdSize: 100 - smoothness, // Ajustar según suavizado
-                            alphaMax: 1
-                        });
-                        
-                        // Cargar y procesar la imagen
-                        potrace.loadImage(img, function() {
-                            potrace.process(function() {
-                                // Obtener el SVG resultante
-                                vectorizedSVG = potrace.getSVG();
-                                
-                                // Mostrar el SVG resultante
-                                svgPreview.innerHTML = vectorizedSVG;
-                                
-                                // Actualizar información del SVG
-                                document.getElementById('svgSize').textContent = (vectorizedSVG.length / 1024).toFixed(2) + ' KB';
-                                
-                                // Contar paths en el SVG
-                                const pathCount = (vectorizedSVG.match(/<path/g) || []).length;
-                                document.getElementById('pathsCount').textContent = pathCount;
-                                
-                                // Habilitar botones de descarga y exportación
-                                downloadSvgBtn.disabled = false;
-                                exportPngBtn.disabled = false;
-                                exportPdfBtn.disabled = false;
-                                exportEpsBtn.disabled = false;
-                                exportDxfBtn.disabled = false;
-                                
-                                // Ocultar barra de progreso
-                                setTimeout(() => {
-                                    progressContainer.style.display = 'none';
-                                }, 500);
-                                
-                                showNotification('Imagen vectorizada correctamente', 'success');
-                            });
-                        });
-                    };
-                    
-                    // Establecer la fuente de la imagen
-                    img.src = tempCanvas.toDataURL();
-                    
-                } catch (error) {
-                    console.error('Error en vectorización:', error);
-                    showNotification('Error al vectorizar la imagen. Intenta con otra imagen o ajusta los parámetros.', 'error');
-                    progressContainer.style.display = 'none';
-                }
-            }
-            
-            // Configurar evento para el botón de descarga SVG
-            downloadSvgBtn.addEventListener('click', function() {
-                if (!vectorizedSVG) return;
-                
-                const blob = new Blob([vectorizedSVG], { type: 'image/svg+xml' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'imagen_vectorizada.svg';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showNotification('SVG descargado correctamente', 'success');
-            });
-            
-            // Configurar eventos para botones de exportación
-            exportPngBtn.addEventListener('click', function() {
-                if (!vectorizedSVG) return;
-                
-                // Crear una imagen a partir del SVG
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Descargar como PNG
-                    const link = document.createElement('a');
-                    link.download = 'imagen_vectorizada.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    
-                    showNotification('PNG exportado correctamente', 'success');
-                };
-                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(vectorizedSVG)));
-            });
-            
-            exportPdfBtn.addEventListener('click', function() {
-                showNotification('Exportando a PDF...', 'info');
-                // Implementación básica de PDF
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Agregar el SVG como imagen
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    
-                    const imgData = canvas.toDataURL('image/png');
-                    doc.addImage(imgData, 'PNG', 10, 10, 180, 160);
-                    doc.save('imagen_vectorizada.pdf');
-                    
-                    showNotification('PDF exportado correctamente', 'success');
-                };
-                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(vectorizedSVG)));
-            });
-            
-            exportEpsBtn.addEventListener('click', function() {
-                showNotification('Exportando a EPS...', 'info');
-                // Para EPS, normalmente necesitarías un servidor o librería más especializada
-                // Por ahora, simularemos la exportación
-                setTimeout(() => {
-                    showNotification('EPS exportado correctamente', 'success');
-                }, 1000);
-            });
-            
-            exportDxfBtn.addEventListener('click', function() {
-                showNotification('Exportando a DXF...', 'info');
-                // Para DXF, normalmente necesitarías un servidor o librería más especializada
-                // Por ahora, simularemos la exportación
-                setTimeout(() => {
-                    showNotification('DXF exportado correctamente', 'success');
-                }, 1000);
-            });
-            
-            // Configurar eventos para la vista previa en camiseta
-            previewShirtBtn.addEventListener('click', function() {
-                if (!vectorizedSVG) {
-                    showNotification('Primero debes vectorizar una imagen', 'error');
-                    return;
-                }
-                
-                shirtModal.classList.add('show');
-                updateProductPreview();
-            });
-            
-            closeShirtModal.addEventListener('click', function() {
-                shirtModal.classList.remove('show');
-            });
-            
-            productType.addEventListener('change', updateProductPreview);
-            productColor.addEventListener('change', updateProductPreview);
-            
-            function updateProductPreview() {
-                const type = productType.value;
-                const color = productColor.value;
-                
-                // URLs de ejemplo para productos (en un caso real, usarías tus propias imágenes)
-                const productImages = {
-                    tshirt: `https://via.placeholder.com/300x300/ffffff?text=Camiseta+${color}`,
-                    hoodie: `https://via.placeholder.com/300x300/ffffff?text=Hoodie+${color}`,
-                    mug: `https://via.placeholder.com/300x300/ffffff?text=Taza+${color}`,
-                    cap: `https://via.placeholder.com/300x300/ffffff?text=Gorra+${color}`
-                };
-                
-                productImage.style.backgroundImage = `url(${productImages[type]})`;
-                productDesign.innerHTML = vectorizedSVG;
-                
-                // Ajustar el tamaño del diseño según el producto
-                const scaleFactors = {
-                    tshirt: 0.6,
-                    hoodie: 0.5,
-                    mug: 0.4,
-                    cap: 0.5
-                };
-                
-                const svgElement = productDesign.querySelector('svg');
-                if (svgElement) {
-                    svgElement.style.transform = `scale(${scaleFactors[type]})`;
-                }
-            }
-            
-            saveProductPreview.addEventListener('click', function() {
-                showNotification('Vista previa guardada correctamente', 'success');
-            });
-            
-            // Función para mostrar notificaciones
-            function showNotification(message, type = 'success') {
-                notification.textContent = message;
-                
-                // Cambiar color según el tipo
-                if (type === 'error') {
-                    notification.style.backgroundColor = '#e74c3c';
-                } else if (type === 'warning') {
-                    notification.style.backgroundColor = '#f39c12';
-                } else if (type === 'info') {
-                    notification.style.backgroundColor = '#3498db';
-                } else {
-                    notification.style.backgroundColor = '#2ecc71';
-                }
-                
-                notification.classList.add('show');
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 3000);
-            }
-        });
-    </script>
+    <div class="card grid">
+      <div class="controls">
+        <label>1) Selecciona una imagen (jpg, png, webp)</label>
+        <input id="fileInput" type="file" accept="image/*" />
+
+        <label class="small">Preview (imagen subida)</label>
+        <div class="preview card" style="padding:10px">
+          <img id="sourceImage" alt="preview" style="display:none;max-height:360px;object-fit:contain"/>
+          <canvas id="previewCanvas" style="display:none;max-width:100%"></canvas>
+          <div id="imageInfo" class="muted small">No hay imagen cargada</div>
+        </div>
+
+        <label>2) Parámetros de vectorización</label>
+        <label class="small">Umbral (threshold) <span id="thresholdVal">50</span></label>
+        <input id="threshold" type="range" min="0" max="100" value="50" />
+
+        <label class="small">Suavizado (smoothness) <span id="smoothVal">50</span></label>
+        <input id="smoothness" type="range" min="0" max="100" value="50" />
+
+        <label><input id="removeBg" type="checkbox" /> Remover fondo transparente (tratar como blanco)</label>
+        <label><input id="optimizePaths" type="checkbox" /> Optimizar SVG (limpiar trazados)</label>
+
+        <div style="margin-top:12px">
+          <button id="vectorizeBtn">Vectorizar</button>
+          <button id="clearBtn" style="background:#334155;color:#e6eef6">Limpiar</button>
+        </div>
+
+        <div style="margin-top:12px" class="muted small">Consejo: si la imagen es fotográfica y quieres colores, usa posterize/multicolor (próxima versión).</div>
+      </div>
+
+      <div>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div class="muted small">Resultado vectorizado</div>
+          <div class="row">
+            <button id="downloadSvg" disabled>Descargar SVG</button>
+            <button id="exportPng" disabled>Exportar PNG (300 DPI)</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div id="svgPreview">Aquí aparecerá el SVG resultante</div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <label class="small">Ancho (pulg): <input id="pngWidthIn" class="inline-input" type="number" step="0.1" value="12"></label>
+          <label class="small">Alto (pulg): <input id="pngHeightIn" class="inline-input" type="number" step="0.1" value="12"></label>
+          <label class="small">DPI: <input id="pngDpi" class="inline-input" type="number" value="300"></label>
+        </div>
+
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">Tamaño SVG: <span id="svgSize">0 KB</span> — Paths: <span id="pathsCount">0</span></div>
+      </div>
+    </div>
+
+    <footer class="muted">Instrucciones rápidas y despliegue: copia el archivo <code>index.html</code> en la raíz de tu repo GitHub, publica con GitHub Pages (branch main) y ya estará disponible. <strong>Revisa la licencia de Potrace (GPL v2).</strong></footer>
+
+  </div>
+
+  <script type="module">
+    // IMPORT: ESM build of Potrace WASM (browser). Uses the 'esm-potrace-wasm' ESM package.
+    // Nota: la librería está licenciada GPLv2. Si vas a redistribuir/poner el proyecto público, revisa obligaciones de licencia.
+    import { init as potraceInit, potrace } from 'https://cdn.jsdelivr.net/npm/esm-potrace-wasm@0.4.1/dist/index.js';
+
+    // UI elements
+    const fileInput = document.getElementById('fileInput');
+    const sourceImage = document.getElementById('sourceImage');
+    const previewCanvas = document.getElementById('previewCanvas');
+    const imageInfo = document.getElementById('imageInfo');
+    const thresholdSlider = document.getElementById('threshold');
+    const thresholdVal = document.getElementById('thresholdVal');
+    const smoothSlider = document.getElementById('smoothness');
+    const smoothVal = document.getElementById('smoothVal');
+    const removeBg = document.getElementById('removeBg');
+    const optimizePaths = document.getElementById('optimizePaths');
+    const vectorizeBtn = document.getElementById('vectorizeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const svgPreview = document.getElementById('svgPreview');
+    const downloadSvgBtn = document.getElementById('downloadSvg');
+    const exportPngBtn = document.getElementById('exportPng');
+    const pngWidthIn = document.getElementById('pngWidthIn');
+    const pngHeightIn = document.getElementById('pngHeightIn');
+    const pngDpi = document.getElementById('pngDpi');
+    const svgSizeSpan = document.getElementById('svgSize');
+    const pathsCountSpan = document.getElementById('pathsCount');
+
+    let lastSvg = '';
+    let loadedImage = null;
+
+    // Bind UI
+    thresholdSlider.addEventListener('input', ()=> thresholdVal.textContent = thresholdSlider.value);
+    smoothSlider.addEventListener('input', ()=> smoothVal.textContent = smoothSlider.value);
+
+    fileInput.addEventListener('change', handleFile);
+    clearBtn.addEventListener('click', clearAll);
+    vectorizeBtn.addEventListener('click', vectorizeImage);
+    downloadSvgBtn.addEventListener('click', downloadSvg);
+    exportPngBtn.addEventListener('click', exportPngFromSvg);
+
+    // Initialize Potrace WASM module (asynchronous)
+    let potraceReady = false;
+    (async ()=>{
+      try {
+        await potraceInit();
+        potraceReady = true;
+        console.log('Potrace WASM inicializado');
+      } catch (err) {
+        console.error('Error inicializando Potrace WASM:', err);
+        alert('Error cargando motor de vectorización (Potrace). Revisa la consola.');
+      }
+    })();
+
+    function handleFile(e){
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        sourceImage.src = ev.target.result;
+        sourceImage.style.display = 'block';
+        sourceImage.onload = function(){
+          loadedImage = sourceImage;
+          // Draw to preview canvas (scaled)
+          drawPreviewCanvas(sourceImage);
+          imageInfo.textContent = `${sourceImage.naturalWidth}×${sourceImage.naturalHeight} px — ${Math.round(f.size/1024)} KB`;
+        };
+      };
+      reader.readAsDataURL(f);
+    }
+
+    function drawPreviewCanvas(img){
+      const maxDim = 2500; // limitar para evitar bloquear el navegador
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      let scale = 1;
+      if (Math.max(w,h) > maxDim) scale = maxDim/Math.max(w,h);
+      previewCanvas.width = Math.round(w*scale);
+      previewCanvas.height = Math.round(h*scale);
+      const ctx = previewCanvas.getContext('2d');
+      ctx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
+      ctx.drawImage(img,0,0, previewCanvas.width, previewCanvas.height);
+      previewCanvas.style.display = 'block';
+    }
+
+    function clearAll(){
+      sourceImage.src = '';
+      sourceImage.style.display = 'none';
+      previewCanvas.style.display = 'none';
+      imageInfo.textContent = 'No hay imagen cargada';
+      svgPreview.innerHTML = 'Aquí aparecerá el SVG resultante';
+      downloadSvgBtn.disabled = true;
+      exportPngBtn.disabled = true;
+      lastSvg = '';
+    }
+
+    async function vectorizeImage(){
+      if (!loadedImage) { alert('Carga primero una imagen'); return; }
+      if (!potraceReady) { alert('El motor Potrace aún no está listo. Intenta en unos segundos.'); return; }
+
+      // Mostrar estado
+      vectorizeBtn.disabled = true;
+      vectorizeBtn.textContent = 'Vectorizando...';
+
+      try {
+        // Preparar canvas binario
+        const maxDim = 3000;
+        const w0 = loadedImage.naturalWidth;
+        const h0 = loadedImage.naturalHeight;
+        let scale = 1;
+        if (Math.max(w0,h0) > maxDim) scale = maxDim/Math.max(w0,h0);
+        const cw = Math.round(w0*scale);
+        const ch = Math.round(h0*scale);
+
+        const tmp = document.createElement('canvas');
+        tmp.width = cw;
+        tmp.height = ch;
+        const tctx = tmp.getContext('2d');
+
+        // Dibujar imagen original (respetando tamaño)
+        tctx.drawImage(loadedImage, 0, 0, cw, ch);
+
+        // Binarizar según umbral (0-100)
+        const threshold = parseInt(thresholdSlider.value,10);
+        const t255 = Math.round((threshold/100)*255);
+        const data = tctx.getImageData(0,0,cw,ch);
+        for (let i=0;i<data.data.length;i+=4){
+          const r = data.data[i], g = data.data[i+1], b = data.data[i+2], a = data.data[i+3];
+          const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+          if (removeBg.checked && a < 250) {
+            // tratar como fondo blanco
+            data.data[i]=data.data[i+1]=data.data[i+2]=255;
+            data.data[i+3]=255;
+            continue;
+          }
+          if (lum < t255) { data.data[i]=data.data[i+1]=data.data[i+2]=0; data.data[i+3]=255; }
+          else { data.data[i]=data.data[i+1]=data.data[i+2]=255; data.data[i+3]=255; }
+        }
+        tctx.putImageData(data,0,0);
+
+        // Map UI smoothness to turdsize/opttolerance
+        const smooth = parseInt(smoothSlider.value,10);
+        const turdsize = Math.round((100 - smooth) * 0.6); // heurístico
+        const opttolerance = Math.max(0.01, (smooth/100)*0.35);
+        const alphamax = 1.0; // default
+
+        // Llamar a potrace (acepta canvas)
+        const options = {
+          turdsize: turdsize,
+          opttolerance: opttolerance,
+          alphamax: alphamax,
+          // no posterize porque ya binarizamos
+          posterizelevel: 1,
+          extractcolors: false,
+          pathonly: false
+        };
+
+        // Ejecutar la traza
+        const svg = await potrace(tmp, options);
+        if (!svg || svg.length < 10) throw new Error('SVG vacío devuelto por Potrace');
+
+        // optimización ligera si está marcada
+        lastSvg = optimizeSvg(svg, optimizePaths.checked);
+
+        svgPreview.innerHTML = lastSvg;
+        svgSizeSpan.textContent = (new Blob([lastSvg]).size/1024).toFixed(2) + ' KB';
+        pathsCountSpan.textContent = (lastSvg.match(/<path\b/g) || []).length;
+
+        // Habilitar botones
+        downloadSvgBtn.disabled = false;
+        exportPngBtn.disabled = false;
+
+      } catch (err) {
+        console.error('Error vectorizando:', err);
+        alert('Error durante la vectorización. Revisa la consola.');
+      } finally {
+        vectorizeBtn.disabled = false;
+        vectorizeBtn.textContent = 'Vectorizar';
+      }
+    }
+
+    function optimizeSvg(svgText, doOptimize){
+      if (!doOptimize) return svgText;
+      let s = svgText;
+      s = s.replace(/<!--([\s\S]*?)-->/g,'');
+      s = s.replace(/<g[^>]*>\s*<\/g>/g,'');
+      s = s.replace(/\s{2,}/g,' ');
+      return s;
+    }
+
+    function downloadSvg(){
+      if (!lastSvg) return;
+      const blob = new Blob([lastSvg], {type:'image/svg+xml'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'design.svg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // Exporta SVG a PNG usando canvas a la dimensión (pulgadas x DPI)
+    function exportPngFromSvg(){
+      if (!lastSvg) { alert('No hay SVG para exportar'); return; }
+      const widthIn = parseFloat(pngWidthIn.value) || 12;
+      const heightIn = parseFloat(pngHeightIn.value) || 12;
+      const dpi = parseInt(pngDpi.value,10) || 300;
+      exportSvgToPng(lastSvg, widthIn, heightIn, dpi, `design_${widthIn}x${heightIn}_${dpi}dpi.png`);
+    }
+
+    function exportSvgToPng(svgText, widthInches, heightInches, dpi, filename){
+      const pxW = Math.round(widthInches * dpi);
+      const pxH = Math.round(heightInches * dpi);
+
+      // Ensure svg has viewBox; if not, set width/height
+      let svgForExport = svgText;
+      if (!/viewBox/.test(svgText)){
+        // try to inject viewBox="0 0 W H" where W/H are current preview sizes (fallback)
+        const match = svgText.match(/<svg[^>]*width=\"?([\d.]+)\"?[^>]*height=\"?([\d.]+)\"?/i);
+        if (match) {
+          const w = match[1], h = match[2];
+          svgForExport = svgText.replace('<svg', `<svg viewBox=\"0 0 ${w} ${h}\" width=\"${pxW}\" height=\"${pxH}\"`);
+        } else {
+          svgForExport = svgText.replace('<svg', `<svg viewBox=\"0 0 ${pxW} ${pxH}\" width=\"${pxW}\" height=\"${pxH}\"`);
+        }
+      } else {
+        // add width/height attributes to scale properly on canvas
+        svgForExport = svgText.replace('<svg', `<svg width=\"${pxW}\" height=\"${pxH}\"`);
+      }
+
+      const blob = new Blob([svgForExport], {type:'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = function(){
+        const canvas = document.createElement('canvas');
+        canvas.width = pxW;
+        canvas.height = pxH;
+        const ctx = canvas.getContext('2d');
+        // Fondo blanco opcional (sublimación sobre blanco preferible en muchas máquinas)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0, canvas.width, canvas.height);
+        canvas.toBlob(function(b){
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = filename || 'design.png';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }, 'image/png', 1.0);
+      };
+      img.onerror = function(e){
+        console.error('Error cargando SVG para export:', e);
+        alert('No se pudo rasterizar el SVG. Revisa la consola.');
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    }
+
+  </script>
+
 </body>
 </html>
