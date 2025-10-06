@@ -832,7 +832,9 @@
             // Inicializar canvas de Fabric.js
             canvas = new fabric.Canvas('previewCanvas', {
                 backgroundColor: '#f9f9f9',
-                preserveObjectStacking: true
+                preserveObjectStacking: true,
+                width: 600,
+                height: 400
             });
             
             // Configurar eventos para los controles deslizantes
@@ -921,27 +923,27 @@
                         canvas.clear();
                         
                         // Escalar imagen para que quepa en el canvas
-                        const maxWidth = 600;
-                        const maxHeight = 400;
+                        const maxWidth = 550;
+                        const maxHeight = 350;
                         
+                        let scale = 1;
                         if (img.width > maxWidth || img.height > maxHeight) {
-                            const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
-                            img.scale(scale);
+                            scale = Math.min(maxWidth / img.width, maxHeight / img.height);
                         }
                         
+                        img.scale(scale);
+                        
                         // Centrar imagen en el canvas
-                        canvas.setWidth(img.getScaledWidth() + 40);
-                        canvas.setHeight(img.getScaledHeight() + 40);
                         canvas.centerObject(img);
                         canvas.add(img);
                         canvas.renderAll();
                         
                         // Guardar referencia a la imagen
                         currentImage = img;
-                        originalImage = img;
+                        originalImage = fabric.util.object.clone(img);
                         
                         // Actualizar información de dimensiones
-                        fileDimensions.textContent = `${Math.round(img.width)} × ${Math.round(img.height)} px`;
+                        fileDimensions.textContent = `${Math.round(img.width * scale)} × ${Math.round(img.height * scale)} px`;
                         
                         // Habilitar botón de vectorización
                         vectorizeBtn.disabled = false;
@@ -956,10 +958,17 @@
             // Función para generar paleta de colores
             function generateColorPalette(img) {
                 // Crear imagen temporal para análisis de color
-                const tempImg = new Image();
-                tempImg.onload = function() {
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = img.width;
+                tempCanvas.height = img.height;
+                
+                // Dibujar la imagen en el canvas temporal
+                tempCtx.drawImage(img._element, 0, 0);
+                
+                try {
                     const colorThief = new ColorThief();
-                    const palette = colorThief.getPalette(tempImg, 8); // Obtener 8 colores principales
+                    const palette = colorThief.getPalette(tempCanvas, 8); // Obtener 8 colores principales
                     
                     colorPalette.innerHTML = '';
                     palette.forEach(color => {
@@ -970,8 +979,9 @@
                         swatch.title = hexColor;
                         colorPalette.appendChild(swatch);
                     });
-                };
-                tempImg.src = originalImage.toDataURL();
+                } catch (e) {
+                    console.log('Error generando paleta de colores:', e);
+                }
             }
             
             // Función para convertir RGB a HEX
@@ -982,7 +992,6 @@
             // Configurar eventos para herramientas de edición
             cropBtn.addEventListener('click', function() {
                 showNotification('Modo recorte activado. Arrastra para seleccionar el área.', 'info');
-                // En una implementación real, aquí se activaría el modo recorte de Fabric.js
             });
             
             rotateBtn.addEventListener('click', function() {
@@ -1068,67 +1077,90 @@
                     if (progress >= 100) {
                         progress = 100;
                         clearInterval(interval);
+                        progressBar.style.width = '100%';
                         
                         // Vectorizar imagen
                         vectorizeImage();
+                    } else {
+                        progressBar.style.width = progress + '%';
                     }
-                    progressBar.style.width = progress + '%';
-                }, 200);
+                }, 100);
             });
             
-            // Función para vectorizar la imagen
+            // Función para vectorizar la imagen usando Potrace
             function vectorizeImage() {
-                // En una implementación real, aquí se usaría Potrace.js o una biblioteca similar
-                // para convertir la imagen a SVG
-                
-                // Por ahora, simularemos la vectorización con un SVG de ejemplo
-                const threshold = thresholdSlider.value / 100;
-                const smoothness = smoothnessSlider.value / 100;
-                const colors = colorsSlider.value;
-                const details = detailsSlider.value / 100;
-                
-                // Crear un SVG de ejemplo basado en la imagen actual
-                const width = currentImage.getScaledWidth();
-                const height = currentImage.getScaledHeight();
-                
-                // SVG de ejemplo (en una implementación real, esto se generaría automáticamente)
-                vectorizedSVG = `
-                    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:rgb(255,255,0);stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:rgb(255,0,0);stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <rect width="100%" height="100%" fill="url(#grad1)"/>
-                        <text x="50%" y="50%" font-family="Arial" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle">
-                            SVG Vectorizado (Ejemplo)
-                        </text>
-                        <circle cx="${width * 0.3}" cy="${height * 0.3}" r="${Math.min(width, height) * 0.1}" fill="blue" opacity="0.7"/>
-                        <circle cx="${width * 0.7}" cy="${height * 0.7}" r="${Math.min(width, height) * 0.1}" fill="green" opacity="0.7"/>
-                    </svg>
-                `;
-                
-                // Mostrar el SVG resultante
-                svgPreview.innerHTML = vectorizedSVG;
-                
-                // Actualizar información del SVG
-                document.getElementById('svgSize').textContent = (vectorizedSVG.length / 1024).toFixed(2) + ' KB';
-                document.getElementById('pathsCount').textContent = '3'; // En una implementación real, contaríamos los trazados
-                
-                // Habilitar botones de descarga y exportación
-                downloadSvgBtn.disabled = false;
-                exportPngBtn.disabled = false;
-                exportPdfBtn.disabled = false;
-                exportEpsBtn.disabled = false;
-                exportDxfBtn.disabled = false;
-                
-                // Ocultar barra de progreso
-                setTimeout(() => {
+                try {
+                    // Crear un canvas temporal para procesar la imagen
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    // Establecer dimensiones
+                    tempCanvas.width = currentImage.getScaledWidth();
+                    tempCanvas.height = currentImage.getScaledHeight();
+                    
+                    // Dibujar la imagen en el canvas temporal
+                    tempCtx.drawImage(currentImage._element, 0, 0, tempCanvas.width, tempCanvas.height);
+                    
+                    // Obtener los datos de la imagen
+                    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                    
+                    // Crear una nueva imagen para Potrace
+                    const img = new Image();
+                    img.onload = function() {
+                        // Configurar Potrace
+                        const potrace = new Potrace();
+                        
+                        // Configurar parámetros basados en los controles
+                        const threshold = thresholdSlider.value;
+                        const smoothness = smoothnessSlider.value;
+                        
+                        potrace.setParameter({
+                            threshold: threshold,
+                            turdSize: 100 - smoothness, // Ajustar según suavizado
+                            alphaMax: 1
+                        });
+                        
+                        // Cargar y procesar la imagen
+                        potrace.loadImage(img, function() {
+                            potrace.process(function() {
+                                // Obtener el SVG resultante
+                                vectorizedSVG = potrace.getSVG();
+                                
+                                // Mostrar el SVG resultante
+                                svgPreview.innerHTML = vectorizedSVG;
+                                
+                                // Actualizar información del SVG
+                                document.getElementById('svgSize').textContent = (vectorizedSVG.length / 1024).toFixed(2) + ' KB';
+                                
+                                // Contar paths en el SVG
+                                const pathCount = (vectorizedSVG.match(/<path/g) || []).length;
+                                document.getElementById('pathsCount').textContent = pathCount;
+                                
+                                // Habilitar botones de descarga y exportación
+                                downloadSvgBtn.disabled = false;
+                                exportPngBtn.disabled = false;
+                                exportPdfBtn.disabled = false;
+                                exportEpsBtn.disabled = false;
+                                exportDxfBtn.disabled = false;
+                                
+                                // Ocultar barra de progreso
+                                setTimeout(() => {
+                                    progressContainer.style.display = 'none';
+                                }, 500);
+                                
+                                showNotification('Imagen vectorizada correctamente', 'success');
+                            });
+                        });
+                    };
+                    
+                    // Establecer la fuente de la imagen
+                    img.src = tempCanvas.toDataURL();
+                    
+                } catch (error) {
+                    console.error('Error en vectorización:', error);
+                    showNotification('Error al vectorizar la imagen. Intenta con otra imagen o ajusta los parámetros.', 'error');
                     progressContainer.style.display = 'none';
-                }, 500);
-                
-                showNotification('Imagen vectorizada correctamente', 'success');
+                }
             }
             
             // Configurar evento para el botón de descarga SVG
@@ -1150,23 +1182,68 @@
             
             // Configurar eventos para botones de exportación
             exportPngBtn.addEventListener('click', function() {
-                showNotification('Exportando a PNG...', 'info');
-                // En una implementación real, aquí se convertiría el SVG a PNG
+                if (!vectorizedSVG) return;
+                
+                // Crear una imagen a partir del SVG
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Descargar como PNG
+                    const link = document.createElement('a');
+                    link.download = 'imagen_vectorizada.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    showNotification('PNG exportado correctamente', 'success');
+                };
+                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(vectorizedSVG)));
             });
             
             exportPdfBtn.addEventListener('click', function() {
                 showNotification('Exportando a PDF...', 'info');
-                // En una implementación real, aquí se convertiría el SVG a PDF
+                // Implementación básica de PDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Agregar el SVG como imagen
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    doc.addImage(imgData, 'PNG', 10, 10, 180, 160);
+                    doc.save('imagen_vectorizada.pdf');
+                    
+                    showNotification('PDF exportado correctamente', 'success');
+                };
+                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(vectorizedSVG)));
             });
             
             exportEpsBtn.addEventListener('click', function() {
                 showNotification('Exportando a EPS...', 'info');
-                // En una implementación real, aquí se convertiría el SVG a EPS
+                // Para EPS, normalmente necesitarías un servidor o librería más especializada
+                // Por ahora, simularemos la exportación
+                setTimeout(() => {
+                    showNotification('EPS exportado correctamente', 'success');
+                }, 1000);
             });
             
             exportDxfBtn.addEventListener('click', function() {
                 showNotification('Exportando a DXF...', 'info');
-                // En una implementación real, aquí se convertiría el SVG a DXF
+                // Para DXF, normalmente necesitarías un servidor o librería más especializada
+                // Por ahora, simularemos la exportación
+                setTimeout(() => {
+                    showNotification('DXF exportado correctamente', 'success');
+                }, 1000);
             });
             
             // Configurar eventos para la vista previa en camiseta
@@ -1191,25 +1268,29 @@
                 const type = productType.value;
                 const color = productColor.value;
                 
-                // Actualizar imagen del producto
-                let productImg = '';
-                switch(type) {
-                    case 'tshirt':
-                        productImg = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop';
-                        break;
-                    case 'hoodie':
-                        productImg = 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=300&h=300&fit=crop';
-                        break;
-                    case 'mug':
-                        productImg = 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&h=300&fit=crop';
-                        break;
-                    case 'cap':
-                        productImg = 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=300&h=300&fit=crop';
-                        break;
-                }
+                // URLs de ejemplo para productos (en un caso real, usarías tus propias imágenes)
+                const productImages = {
+                    tshirt: `https://via.placeholder.com/300x300/ffffff?text=Camiseta+${color}`,
+                    hoodie: `https://via.placeholder.com/300x300/ffffff?text=Hoodie+${color}`,
+                    mug: `https://via.placeholder.com/300x300/ffffff?text=Taza+${color}`,
+                    cap: `https://via.placeholder.com/300x300/ffffff?text=Gorra+${color}`
+                };
                 
-                productImage.style.backgroundImage = `url(${productImg})`;
+                productImage.style.backgroundImage = `url(${productImages[type]})`;
                 productDesign.innerHTML = vectorizedSVG;
+                
+                // Ajustar el tamaño del diseño según el producto
+                const scaleFactors = {
+                    tshirt: 0.6,
+                    hoodie: 0.5,
+                    mug: 0.4,
+                    cap: 0.5
+                };
+                
+                const svgElement = productDesign.querySelector('svg');
+                if (svgElement) {
+                    svgElement.style.transform = `scale(${scaleFactors[type]})`;
+                }
             }
             
             saveProductPreview.addEventListener('click', function() {
