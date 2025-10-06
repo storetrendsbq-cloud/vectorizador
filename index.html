@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vectorizador profesional (Potrace WASM) - Sublimación</title>
-  <meta name="description" content="App simple para vectorizar imágenes en el navegador usando Potrace (wasm). Lista para GitHub Pages." />
+  <title>Vectorizador profesional a color (Potrace WASM) - Sublimación</title>
+  <meta name="description" content="App para vectorizar imágenes a color en el navegador. Reduce colores (posterize/k-means), vectoriza por capa con Potrace WASM y exporta SVG/PNG listos para impresión." />
   <style>
     :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#06b6d4}
     html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Helvetica,Arial}
-    body{background:linear-gradient(180deg,#071028 0%, #071826 100%);color:#e6eef6;padding:24px}
+    body{background:linear-gradient(180deg,#071028 0%, #071826 100%);color:#e6eef6;padding:20px}
     .container{max-width:1100px;margin:0 auto}
     header{display:flex;align-items:center;gap:16px}
     h1{font-size:20px;margin:0}
@@ -18,7 +18,7 @@
     input[type=file]{width:100%}
     .preview{display:flex;flex-direction:column;gap:8px}
     canvas, img#sourceImage{max-width:100%;border-radius:8px;background:#fff}
-    #svgPreview{background:#fff;padding:8px;border-radius:8px;min-height:200px}
+    #svgPreview{background:#fff;padding:8px;border-radius:8px;min-height:240px}
     .row{display:flex;gap:8px;align-items:center}
     button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:#012;cursor:pointer}
     button:disabled{opacity:0.4;cursor:not-allowed}
@@ -26,6 +26,7 @@
     footer{margin-top:18px;color:var(--muted);font-size:13px}
     .inline-input{width:72px}
     .small{font-size:12px}
+    .progress{margin-top:8px;color:var(--muted);font-size:13px}
   </style>
 </head>
 <body>
@@ -33,14 +34,14 @@
     <header>
       <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='38' height='38'><rect rx='6' width='38' height='38' fill='%2306b6d4'/><text x='50%' y='54%' font-size='16' font-family='Arial' fill='white' text-anchor='middle' dominant-baseline='middle'>V</text></svg>" alt="logo" width="48" height="48">
       <div>
-        <h1>Vectorizador para Sublimación — Potrace (WASM)</h1>
-        <div class="muted">Genera SVGs listos para impresión; exporta PNG a 300 DPI. (Revisa licencia Potrace antes de distribuir)</div>
+        <h1>Vectorizador para Sublimación (A COLOR)</h1>
+        <div class="muted">Reduce colores (posterize/k-means), vectoriza cada color por separado con Potrace (WASM) y crea un SVG a color. Exporta PNG a 300 DPI.</div>
       </div>
     </header>
 
     <div class="card grid">
       <div class="controls">
-        <label>1) Selecciona una imagen (jpg, png, webp)</label>
+        <label>1) Selecciona tu archivo (PNG, JPG, WEBP)</label>
         <input id="fileInput" type="file" accept="image/*" />
 
         <label class="small">Preview (imagen subida)</label>
@@ -50,22 +51,24 @@
           <div id="imageInfo" class="muted small">No hay imagen cargada</div>
         </div>
 
-        <label>2) Parámetros de vectorización</label>
-        <label class="small">Umbral (threshold) <span id="thresholdVal">50</span></label>
-        <input id="threshold" type="range" min="0" max="100" value="50" />
+        <label>2) Parámetros para vectorizar a color</label>
+        <label class="small">Número de colores (K) <span id="kVal">6</span></label>
+        <input id="kInput" type="range" min="2" max="12" value="6" />
 
-        <label class="small">Suavizado (smoothness) <span id="smoothVal">50</span></label>
+        <label class="small">Suavizado (reduce detalles pequeños) <span id="smoothVal">50</span></label>
         <input id="smoothness" type="range" min="0" max="100" value="50" />
 
         <label><input id="removeBg" type="checkbox" /> Remover fondo transparente (tratar como blanco)</label>
-        <label><input id="optimizePaths" type="checkbox" /> Optimizar SVG (limpiar trazados)</label>
+        <label><input id="optimizePaths" type="checkbox" /> Optimizar SVG final (limpieza ligera)</label>
 
         <div style="margin-top:12px">
-          <button id="vectorizeBtn">Vectorizar</button>
+          <button id="vectorizeColorBtn">Vectorizar a color</button>
           <button id="clearBtn" style="background:#334155;color:#e6eef6">Limpiar</button>
         </div>
 
-        <div style="margin-top:12px" class="muted small">Consejo: si la imagen es fotográfica y quieres colores, usa posterize/multicolor (próxima versión).</div>
+        <div class="progress" id="progressText">Estado: esperando imagen</div>
+
+        <div style="margin-top:12px" class="muted small">Consejo: para serigrafía o sublimado, usa K entre 4 y 8 para diseños a color planos. Para fotos no vale la pena (resultado estilizado).</div>
       </div>
 
       <div>
@@ -78,7 +81,7 @@
         </div>
 
         <div class="card" style="margin-top:12px">
-          <div id="svgPreview">Aquí aparecerá el SVG resultante</div>
+          <div id="svgPreview">Aquí aparecerá el SVG final (vectorizado a color)</div>
         </div>
 
         <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
@@ -87,31 +90,39 @@
           <label class="small">DPI: <input id="pngDpi" class="inline-input" type="number" value="300"></label>
         </div>
 
-        <div style="margin-top:8px;color:var(--muted);font-size:13px">Tamaño SVG: <span id="svgSize">0 KB</span> — Paths: <span id="pathsCount">0</span></div>
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">Tamaño SVG: <span id="svgSize">0 KB</span> — Capas/colores: <span id="pathsCount">0</span></div>
       </div>
     </div>
 
-    <footer class="muted">Instrucciones rápidas y despliegue: copia el archivo <code>index.html</code> en la raíz de tu repo GitHub, publica con GitHub Pages (branch main) y ya estará disponible. <strong>Revisa la licencia de Potrace (GPL v2).</strong></footer>
+    <footer class="muted">Instrucciones simples más abajo. <strong>ATENCIÓN:</strong> Potrace (WASM) tiene licencia GPLv2 — revisa antes de publicar o usa licencia comercial si lo prefieres.</footer>
 
   </div>
 
   <script type="module">
-    // IMPORT: ESM build of Potrace WASM (browser). Uses the 'esm-potrace-wasm' ESM package.
-    // Nota: la librería está licenciada GPLv2. Si vas a redistribuir/poner el proyecto público, revisa obligaciones de licencia.
+    /*
+      Esta versión realiza vectorización a COLOR con el siguiente flujo simplificado:
+      1) Reduce los colores de la imagen a K colores mediante K-means (muestreo para rapidez).
+      2) Para cada color (centroide), crea una máscara binaria (pixeles de ese color -> negro, resto -> blanco).
+      3) Llama a Potrace (WASM) para vectorizar esa máscara y obtiene paths SVG.
+      4) Combina todas las capas en un único SVG final con cada capa rellenada con el color correspondiente.
+
+      Limitaciones: funciona mejor con diseños de colores planos (logos, ilustraciones). No es ideal para fotos (aunque puede 'estilizarlas').
+    */
+
     import { init as potraceInit, potrace } from 'https://cdn.jsdelivr.net/npm/esm-potrace-wasm@0.4.1/dist/index.js';
 
-    // UI elements
+    // UI
     const fileInput = document.getElementById('fileInput');
     const sourceImage = document.getElementById('sourceImage');
     const previewCanvas = document.getElementById('previewCanvas');
     const imageInfo = document.getElementById('imageInfo');
-    const thresholdSlider = document.getElementById('threshold');
-    const thresholdVal = document.getElementById('thresholdVal');
+    const kInput = document.getElementById('kInput');
+    const kVal = document.getElementById('kVal');
     const smoothSlider = document.getElementById('smoothness');
     const smoothVal = document.getElementById('smoothVal');
     const removeBg = document.getElementById('removeBg');
     const optimizePaths = document.getElementById('optimizePaths');
-    const vectorizeBtn = document.getElementById('vectorizeBtn');
+    const vectorizeColorBtn = document.getElementById('vectorizeColorBtn');
     const clearBtn = document.getElementById('clearBtn');
     const svgPreview = document.getElementById('svgPreview');
     const downloadSvgBtn = document.getElementById('downloadSvg');
@@ -119,6 +130,7 @@
     const pngWidthIn = document.getElementById('pngWidthIn');
     const pngHeightIn = document.getElementById('pngHeightIn');
     const pngDpi = document.getElementById('pngDpi');
+    const progressText = document.getElementById('progressText');
     const svgSizeSpan = document.getElementById('svgSize');
     const pathsCountSpan = document.getElementById('pathsCount');
 
@@ -126,25 +138,24 @@
     let loadedImage = null;
 
     // Bind UI
-    thresholdSlider.addEventListener('input', ()=> thresholdVal.textContent = thresholdSlider.value);
+    kInput.addEventListener('input', ()=> kVal.textContent = kInput.value);
     smoothSlider.addEventListener('input', ()=> smoothVal.textContent = smoothSlider.value);
-
     fileInput.addEventListener('change', handleFile);
     clearBtn.addEventListener('click', clearAll);
-    vectorizeBtn.addEventListener('click', vectorizeImage);
+    vectorizeColorBtn.addEventListener('click', vectorizeColorImage);
     downloadSvgBtn.addEventListener('click', downloadSvg);
     exportPngBtn.addEventListener('click', exportPngFromSvg);
 
-    // Initialize Potrace WASM module (asynchronous)
+    // Initialize Potrace WASM
     let potraceReady = false;
     (async ()=>{
-      try {
+      try{
         await potraceInit();
         potraceReady = true;
-        console.log('Potrace WASM inicializado');
-      } catch (err) {
-        console.error('Error inicializando Potrace WASM:', err);
-        alert('Error cargando motor de vectorización (Potrace). Revisa la consola.');
+        console.log('Potrace WASM listo');
+      } catch(e){
+        console.error('Error iniciando Potrace WASM', e);
+        alert('No se pudo cargar el motor de vectorización. Revisa la consola.');
       }
     })();
 
@@ -157,16 +168,16 @@
         sourceImage.style.display = 'block';
         sourceImage.onload = function(){
           loadedImage = sourceImage;
-          // Draw to preview canvas (scaled)
           drawPreviewCanvas(sourceImage);
           imageInfo.textContent = `${sourceImage.naturalWidth}×${sourceImage.naturalHeight} px — ${Math.round(f.size/1024)} KB`;
+          progressText.textContent = 'Estado: imagen cargada';
         };
       };
       reader.readAsDataURL(f);
     }
 
     function drawPreviewCanvas(img){
-      const maxDim = 2500; // limitar para evitar bloquear el navegador
+      const maxDim = 1200; // reducir para evitar trabajo excesivo en navegador
       const w = img.naturalWidth;
       const h = img.naturalHeight;
       let scale = 1;
@@ -184,94 +195,176 @@
       sourceImage.style.display = 'none';
       previewCanvas.style.display = 'none';
       imageInfo.textContent = 'No hay imagen cargada';
-      svgPreview.innerHTML = 'Aquí aparecerá el SVG resultante';
+      svgPreview.innerHTML = 'Aquí aparecerá el SVG final (vectorizado a color)';
       downloadSvgBtn.disabled = true;
       exportPngBtn.disabled = true;
       lastSvg = '';
+      progressText.textContent = 'Estado: esperando imagen';
     }
 
-    async function vectorizeImage(){
-      if (!loadedImage) { alert('Carga primero una imagen'); return; }
-      if (!potraceReady) { alert('El motor Potrace aún no está listo. Intenta en unos segundos.'); return; }
+    // ------------------ K-MEANS QUANTIZATION ------------------
+    function samplePixels(imageData, maxSamples=15000){
+      const w = imageData.width;
+      const h = imageData.height;
+      const total = w*h;
+      const step = Math.max(1, Math.floor(total / maxSamples));
+      const samples = [];
+      const d = imageData.data;
+      for (let i=0, idx=0; i<total; i+=step, idx+=step*4){
+        const base = i*4;
+        samples.push([d[base], d[base+1], d[base+2]]);
+      }
+      return samples;
+    }
 
-      // Mostrar estado
-      vectorizeBtn.disabled = true;
-      vectorizeBtn.textContent = 'Vectorizando...';
+    function euclid2(a,b){
+      const dr = a[0]-b[0]; const dg = a[1]-b[1]; const db = a[2]-b[2];
+      return dr*dr + dg*dg + db*db;
+    }
 
-      try {
-        // Preparar canvas binario
-        const maxDim = 3000;
-        const w0 = loadedImage.naturalWidth;
-        const h0 = loadedImage.naturalHeight;
-        let scale = 1;
-        if (Math.max(w0,h0) > maxDim) scale = maxDim/Math.max(w0,h0);
-        const cw = Math.round(w0*scale);
-        const ch = Math.round(h0*scale);
+    function kmeans(samples, K, iterations=8){
+      const n = samples.length;
+      // init centroids randomly
+      const centroids = [];
+      for (let k=0;k<K;k++) centroids.push(samples[Math.floor(Math.random()*n)].slice());
 
-        const tmp = document.createElement('canvas');
-        tmp.width = cw;
-        tmp.height = ch;
-        const tctx = tmp.getContext('2d');
-
-        // Dibujar imagen original (respetando tamaño)
-        tctx.drawImage(loadedImage, 0, 0, cw, ch);
-
-        // Binarizar según umbral (0-100)
-        const threshold = parseInt(thresholdSlider.value,10);
-        const t255 = Math.round((threshold/100)*255);
-        const data = tctx.getImageData(0,0,cw,ch);
-        for (let i=0;i<data.data.length;i+=4){
-          const r = data.data[i], g = data.data[i+1], b = data.data[i+2], a = data.data[i+3];
-          const lum = 0.2126*r + 0.7152*g + 0.0722*b;
-          if (removeBg.checked && a < 250) {
-            // tratar como fondo blanco
-            data.data[i]=data.data[i+1]=data.data[i+2]=255;
-            data.data[i+3]=255;
-            continue;
-          }
-          if (lum < t255) { data.data[i]=data.data[i+1]=data.data[i+2]=0; data.data[i+3]=255; }
-          else { data.data[i]=data.data[i+1]=data.data[i+2]=255; data.data[i+3]=255; }
+      const assignments = new Array(n).fill(0);
+      for (let it=0; it<iterations; it++){
+        // assign
+        for (let i=0;i<n;i++){
+          let best = 0; let bestd = euclid2(samples[i], centroids[0]);
+          for (let c=1;c<K;c++){ const d = euclid2(samples[i], centroids[c]); if (d < bestd){ bestd=d; best=c; } }
+          assignments[i] = best;
         }
-        tctx.putImageData(data,0,0);
+        // recompute
+        const sums = Array.from({length:K}, ()=>[0,0,0]);
+        const counts = new Array(K).fill(0);
+        for (let i=0;i<n;i++){ const a = assignments[i]; sums[a][0]+=samples[i][0]; sums[a][1]+=samples[i][1]; sums[a][2]+=samples[i][2]; counts[a]++; }
+        for (let c=0;c<K;c++){
+          if (counts[c]===0){ centroids[c] = samples[Math.floor(Math.random()*n)].slice(); }
+          else { centroids[c] = [ Math.round(sums[c][0]/counts[c]), Math.round(sums[c][1]/counts[c]), Math.round(sums[c][2]/counts[c]) ]; }
+        }
+      }
+      return centroids;
+    }
 
-        // Map UI smoothness to turdsize/opttolerance
+    // Quantize full image: returns cluster index per pixel and centroids
+    function quantizeImage(imageCanvas, K){
+      const w = imageCanvas.width; const h = imageCanvas.height;
+      const ctx = imageCanvas.getContext('2d');
+      const imageData = ctx.getImageData(0,0,w,h);
+      const samples = samplePixels(imageData, 15000);
+      const centroids = kmeans(samples, K, 10);
+
+      // map every pixel to nearest centroid
+      const total = w*h;
+      const indexed = new Uint8Array(total);
+      const counts = new Array(K).fill(0);
+      const d = imageData.data;
+      for (let i=0, p=0; i<total; i++, p+=4){
+        const pix = [d[p], d[p+1], d[p+2]];
+        let best = 0; let bestd = euclid2(pix, centroids[0]);
+        for (let c=1;c<K;c++){ const dd = euclid2(pix, centroids[c]); if (dd < bestd){ bestd=dd; best=c; } }
+        indexed[i] = best;
+        counts[best]++;
+      }
+      return {indexed, centroids, counts, width:w, height:h};
+    }
+
+    // ------------------ VECTORIZAR POR CAPA (Potrace) ------------------
+    async function vectorizeColorImage(){
+      if (!loadedImage) { alert('Carga primero una imagen'); return; }
+      if (!potraceReady) { alert('Espera a que el motor esté listo (unos segundos).'); return; }
+
+      vectorizeColorBtn.disabled = true; vectorizeColorBtn.textContent = 'Procesando...';
+      progressText.textContent = 'Redimensionando y preparando...';
+
+      try{
+        // Preparar canvas de trabajo (limitado para rendimiento)
+        const maxDim = 1200;
+        const w0 = loadedImage.naturalWidth; const h0 = loadedImage.naturalHeight;
+        let scale = 1; if (Math.max(w0,h0) > maxDim) scale = maxDim/Math.max(w0,h0);
+        const w = Math.round(w0*scale), h = Math.round(h0*scale);
+        const work = document.createElement('canvas'); work.width = w; work.height = h;
+        const wctx = work.getContext('2d');
+        wctx.clearRect(0,0,w,h);
+        // background handling
+        if (removeBg.checked) {
+          // draw white background first to avoid transparent holes
+          wctx.fillStyle = '#ffffff'; wctx.fillRect(0,0,w,h);
+        }
+        wctx.drawImage(loadedImage, 0, 0, w, h);
+
+        progressText.textContent = 'Reduciendo colores (K-means)...';
+        const K = parseInt(kInput.value,10);
+        const q = quantizeImage(work, K);
+
+        // order colors by size (largest first) for sensible layering
+        const colorIndices = Array.from({length:K}, (_,i)=>i);
+        colorIndices.sort((a,b)=> q.counts[b] - q.counts[a]);
+
+        // Map each color to an SVG group by running Potrace on a mask
+        const groups = [];
         const smooth = parseInt(smoothSlider.value,10);
-        const turdsize = Math.round((100 - smooth) * 0.6); // heurístico
+        const turdsize = Math.round((100 - smooth) * 0.6);
         const opttolerance = Math.max(0.01, (smooth/100)*0.35);
-        const alphamax = 1.0; // default
 
-        // Llamar a potrace (acepta canvas)
-        const options = {
-          turdsize: turdsize,
-          opttolerance: opttolerance,
-          alphamax: alphamax,
-          // no posterize porque ya binarizamos
-          posterizelevel: 1,
-          extractcolors: false,
-          pathonly: false
-        };
+        for (let idx = 0; idx < colorIndices.length; idx++){
+          const colorIdx = colorIndices[idx];
+          if (q.counts[colorIdx] === 0) continue; // nothing de vectorizar
 
-        // Ejecutar la traza
-        const svg = await potrace(tmp, options);
-        if (!svg || svg.length < 10) throw new Error('SVG vacío devuelto por Potrace');
+          progressText.textContent = `Vectorizando color ${idx+1} de ${colorIndices.length}...`;
 
-        // optimización ligera si está marcada
-        lastSvg = optimizeSvg(svg, optimizePaths.checked);
+          // crear máscara: negro donde pixel == colorIdx, blanco en resto
+          const mask = document.createElement('canvas'); mask.width = q.width; mask.height = q.height;
+          const mctx = mask.getContext('2d');
+          const maskImg = mctx.createImageData(q.width, q.height);
+          for (let i=0, p=0; i<q.indexed.length; i++, p+=4){
+            const val = (q.indexed[i] === colorIdx) ? 0 : 255; // 0 -> negro, 255 -> blanco
+            maskImg.data[p] = maskImg.data[p+1] = maskImg.data[p+2] = val;
+            maskImg.data[p+3] = 255;
+          }
+          mctx.putImageData(maskImg, 0, 0);
 
+          // Llamar a Potrace sobre mask (retorna SVG string)
+          const options = { turdsize: turdsize, opttolerance: opttolerance, alphamax: 1.0, posterizelevel:1, extractcolors:false };
+          const svgMask = await potrace(mask, options);
+          // Extraer contenido interno de <svg>...</svg>
+          const inner = (svgMask.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i) || [null, svgMask])[1] || '';
+
+          // Color actual (centroid)
+          const c = q.centroids[colorIdx];
+          const colorRgb = `rgb(${c[0]},${c[1]},${c[2]})`;
+
+          // empaquetar
+          groups.push({color: colorRgb, inner: inner});
+        }
+
+        progressText.textContent = 'Combinando capas en SVG final...';
+
+        // Construir SVG final
+        let finalSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${q.width} ${q.height}" width="${q.width}" height="${q.height}">`;
+        // Background opcional: (no dibujamos fondo para mantener transparencia)
+        // Añadir grupos en el orden calculado
+        for (const g of groups){
+          finalSvg += `<g fill="${g.color}">${g.inner}</g>`;
+        }
+        finalSvg += '</svg>';
+
+        lastSvg = optimizeSvg(finalSvg, optimizePaths.checked);
         svgPreview.innerHTML = lastSvg;
         svgSizeSpan.textContent = (new Blob([lastSvg]).size/1024).toFixed(2) + ' KB';
-        pathsCountSpan.textContent = (lastSvg.match(/<path\b/g) || []).length;
+        pathsCountSpan.textContent = groups.length;
 
-        // Habilitar botones
-        downloadSvgBtn.disabled = false;
-        exportPngBtn.disabled = false;
+        downloadSvgBtn.disabled = false; exportPngBtn.disabled = false;
+        progressText.textContent = 'Listo — puedes descargar SVG o exportar PNG.';
 
-      } catch (err) {
-        console.error('Error vectorizando:', err);
-        alert('Error durante la vectorización. Revisa la consola.');
+      } catch (err){
+        console.error('Error en vectorizado a color:', err);
+        alert('Error durante la vectorización a color. Revisa la consola.');
+        progressText.textContent = 'Error — mira la consola';
       } finally {
-        vectorizeBtn.disabled = false;
-        vectorizeBtn.textContent = 'Vectorizar';
+        vectorizeColorBtn.disabled = false; vectorizeColorBtn.textContent = 'Vectorizar a color';
       }
     }
 
@@ -288,16 +381,9 @@
       if (!lastSvg) return;
       const blob = new Blob([lastSvg], {type:'image/svg+xml'});
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'design.svg';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const a = document.createElement('a'); a.href = url; a.download = 'design_color.svg'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
 
-    // Exporta SVG a PNG usando canvas a la dimensión (pulgadas x DPI)
     function exportPngFromSvg(){
       if (!lastSvg) { alert('No hay SVG para exportar'); return; }
       const widthIn = parseFloat(pngWidthIn.value) || 12;
@@ -309,50 +395,23 @@
     function exportSvgToPng(svgText, widthInches, heightInches, dpi, filename){
       const pxW = Math.round(widthInches * dpi);
       const pxH = Math.round(heightInches * dpi);
-
-      // Ensure svg has viewBox; if not, set width/height
       let svgForExport = svgText;
       if (!/viewBox/.test(svgText)){
-        // try to inject viewBox="0 0 W H" where W/H are current preview sizes (fallback)
-        const match = svgText.match(/<svg[^>]*width=\"?([\d.]+)\"?[^>]*height=\"?([\d.]+)\"?/i);
-        if (match) {
-          const w = match[1], h = match[2];
-          svgForExport = svgText.replace('<svg', `<svg viewBox=\"0 0 ${w} ${h}\" width=\"${pxW}\" height=\"${pxH}\"`);
-        } else {
-          svgForExport = svgText.replace('<svg', `<svg viewBox=\"0 0 ${pxW} ${pxH}\" width=\"${pxW}\" height=\"${pxH}\"`);
-        }
+        svgForExport = svgText.replace('<svg', `<svg viewBox="0 0 ${pxW} ${pxH}" width="${pxW}" height="${pxH}"`);
       } else {
-        // add width/height attributes to scale properly on canvas
-        svgForExport = svgText.replace('<svg', `<svg width=\"${pxW}\" height=\"${pxH}\"`);
+        svgForExport = svgText.replace('<svg', `<svg width="${pxW}" height="${pxH}"`);
       }
-
       const blob = new Blob([svgForExport], {type:'image/svg+xml;charset=utf-8'});
       const url = URL.createObjectURL(blob);
       const img = new Image();
       img.onload = function(){
-        const canvas = document.createElement('canvas');
-        canvas.width = pxW;
-        canvas.height = pxH;
+        const canvas = document.createElement('canvas'); canvas.width = pxW; canvas.height = pxH;
         const ctx = canvas.getContext('2d');
-        // Fondo blanco opcional (sublimación sobre blanco preferible en muchas máquinas)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.drawImage(img,0,0, canvas.width, canvas.height);
-        canvas.toBlob(function(b){
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(b);
-          a.download = filename || 'design.png';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        }, 'image/png', 1.0);
+        canvas.toBlob(function(b){ const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = filename || 'design.png'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }, 'image/png', 1.0);
       };
-      img.onerror = function(e){
-        console.error('Error cargando SVG para export:', e);
-        alert('No se pudo rasterizar el SVG. Revisa la consola.');
-        URL.revokeObjectURL(url);
-      };
+      img.onerror = function(e){ console.error('Error cargando SVG para export:', e); alert('No se pudo rasterizar el SVG. Revisa la consola.'); URL.revokeObjectURL(url); };
       img.src = url;
     }
 
