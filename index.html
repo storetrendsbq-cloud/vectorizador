@@ -1,9 +1,12 @@
 <!doctype html>
 <html lang="es">
+  <link rel="icon" type="image/svg+xml" 
+href="data:image/svg+xml,<svg xmlns='http://www.w3
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vectorizador a Color Optimizado - Sublimación</title>
+  <title>Vectorizador a Color Optimizado - Sublimación y Logos</title>
   <style>
     :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#06b6d4}
     body{background:linear-gradient(180deg,#071028 0%,#071826 100%);color:#e6eef6;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;padding:24px}
@@ -13,34 +16,59 @@
     .card{background:rgba(255,255,255,0.03);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
     .grid{display:grid;grid-template-columns:340px 1fr;gap:16px;margin-top:16px}
     label{display:block;margin-top:10px;font-size:13px;color:var(--muted)}
-    input[type=file],input[type=range],input[type=number]{width:100%}
-    button{background:var(--accent);color:#012;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+    input[type=file],input[type=range],input[type=number],select{width:100%}
+    button{border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
     button:disabled{opacity:0.4;cursor:not-allowed}
     #svgPreview{background:#fff;border-radius:8px;min-height:400px;padding:8px;overflow:auto;color:#000}
     .row{display:flex;gap:8px;align-items:center}
     .small{font-size:12px;color:var(--muted)}
     .guide{margin-top:20px;font-size:14px;line-height:1.5;color:#d1d5db}
     .guide h2{font-size:16px;margin:12px 0 6px;color:#06b6d4}
-    #status{margin-top:10px;color:#d1d5db;font-size:13px}
+    #status{margin-top:10px;font-size:13px;font-weight:600;}
     .advanced{margin-top:14px;display:none;background:#1e293b;padding:10px;border-radius:8px}
     .adv-row{margin-bottom:10px}
     .adv-row label{margin:0 0 4px 0;font-size:12px;color:#9ca3af}
     .adv-row input[type=range]{width:70%}
     .adv-row input[type=number]{width:25%;margin-left:5px}
-    #restoreMsg{
-      margin-top:6px;
-      font-size:12px;
-      color:#38bdf8;
-      opacity:0;
-      transition:opacity 0.6s ease;
+
+    /* Colores dinámicos */
+    #status.sublimacion, #restoreMsg.sublimacion, #vectorizeBtn.sublimacion {
+      color:#38bdf8; border-color:#38bdf8; background:rgba(56,189,248,0.1);
     }
-    #restoreMsg.show{opacity:1;}
+    #status.ilustracion, #restoreMsg.ilustracion, #vectorizeBtn.ilustracion {
+      color:#facc15; border-color:#facc15; background:rgba(250,204,21,0.1);
+    }
+    #status.logo, #restoreMsg.logo, #vectorizeBtn.logo {
+      color:#4ade80; border-color:#4ade80; background:rgba(74,222,128,0.1);
+    }
+
+    #restoreMsg{
+      margin-top:8px;
+      font-size:13px;
+      font-weight:600;
+      padding:8px 12px;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid;
+    }
+    #restoreMsg .icon{font-size:16px;}
+    #vectorizeBtn { color:#012; }
+    #vectorizeBtn.ilustracion { color:#000; } /* contraste con amarillo */
+
+    /* Botones secundarios neutros */
+    #downloadSvg,
+    #exportPng {
+      background:#334155;
+      color:#e6eef6;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>Vectorizador a Color para Sublimación</h1>
+    <h1>Vectorizador a Color para Sublimación y Logos</h1>
   </header>
 
   <div class="card grid">
@@ -64,6 +92,18 @@
       </div>
 
       <div class="advanced" id="advancedPanel">
+
+        <div class="adv-row">
+          <label>Perfil rápido:</label>
+          <select id="profileSelect">
+            <option value="sublimacion">🎨 Sublimación</option>
+            <option value="ilustracion">✏️ Ilustración</option>
+            <option value="logo">🅻 Logo</option>
+          </select>
+        </div>
+
+        <div id="restoreMsg" class="sublimacion">🎨 Perfil aplicado: Sublimación → K=4, ltres=0.5, pathomit=8, roundcoords=2, blurdelta=20, qtres=1, scale=1</div>
+
         <div class="adv-row">
           <label>pathomit (ignorar trazos pequeños)</label>
           <input id="pathomitRange" type="range" min="0" max="50" value="8">
@@ -89,22 +129,19 @@
           <input id="scaleRange" type="range" min="0.5" max="3" step="0.1" value="1">
           <input id="scaleNum" type="number" min="0.5" max="3" step="0.1" value="1">
         </div>
-        <div style="margin-top:10px">
-          <button id="restoreDefaults">🔄 Restaurar valores recomendados</button>
-          <div id="restoreMsg"></div>
-        </div>
+
       </div>
 
-      <div id="status">Estado: esperando imagen</div>
+      <div id="status" class="sublimacion">Estado: esperando imagen · Perfil activo: 🎨 Sublimación</div>
 
       <div class="guide">
         <h2>Guía rápida</h2>
-        <p><strong>Diseños planos (sublimación):</strong><br>
+        <p><strong>🎨 Diseños planos (sublimación):</strong><br>
         Colores = 4 · Detalle = 0.5.</p>
-        <p><strong>Ilustraciones:</strong><br>
+        <p><strong>✏️ Ilustraciones:</strong><br>
         Colores = 6–8 · Detalle = 1–2.</p>
-        <p><strong>Fotografías:</strong><br>
-        Colores = 8–12 · Detalle = 2–4.</p>
+        <p><strong>🅻 Logos / Tipografía:</strong><br>
+        Colores = 2 · Detalle = 1.</p>
       </div>
     </div>
 
@@ -126,10 +163,9 @@
   const status=document.getElementById('status');
   const advPanel=document.getElementById('advancedPanel');
   const toggleAdv=document.getElementById('toggleAdvanced');
-  const restoreDefaults=document.getElementById('restoreDefaults');
+  const profileSelect=document.getElementById('profileSelect');
   const restoreMsg=document.getElementById('restoreMsg');
 
-  // advanced controls
   const pathomitRange=document.getElementById('pathomitRange'), pathomitNum=document.getElementById('pathomitNum');
   const roundRange=document.getElementById('roundRange'), roundNum=document.getElementById('roundNum');
   const blurRange=document.getElementById('blurRange'), blurNum=document.getElementById('blurNum');
@@ -137,6 +173,7 @@
   const scaleRange=document.getElementById('scaleRange'), scaleNum=document.getElementById('scaleNum');
 
   let loadedImage=null,lastSvg='';
+  let currentProfileName="🎨 Sublimación"; 
 
   kInput.addEventListener('input',()=>kVal.textContent=kInput.value);
   ltresInput.addEventListener('input',()=>ltresVal.textContent=ltresInput.value);
@@ -150,21 +187,46 @@
     toggleAdv.textContent=advPanel.style.display==='block'?'⚙️ Ocultar ajustes avanzados':'⚙️ Mostrar ajustes avanzados';
   };
 
-  restoreDefaults.onclick=()=>{
-    pathomitRange.value=pathomitNum.value=8;
-    roundRange.value=roundNum.value=2;
-    blurRange.value=blurNum.value=20;
-    qtresRange.value=qtresNum.value=1;
-    scaleRange.value=scaleNum.value=1;
-    restoreMsg.textContent='Valores restaurados: pathomit=8 · roundcoords=2 · blurdelta=20 · qtres=1 · scale=1';
-    restoreMsg.classList.add('show');
-    setTimeout(()=>{restoreMsg.classList.remove('show')},5000);
+  function showMsg(icon,text,profileKey){
+    restoreMsg.innerHTML = `<span class="icon">${icon}</span> ${text}`;
+    restoreMsg.className = profileKey;
+  }
+
+  function updateStatus(msg, profileKey){
+    status.className = profileKey;
+    status.textContent=`${msg} · Perfil activo: ${currentProfileName}`;
+    vectorizeBtn.className = profileKey;
+  }
+
+  const profiles = {
+    sublimacion:{K:4,ltres:0.5,pathomit:8,roundcoords:2,blurdelta:20,qtres:1,scale:1,icon:"🎨",name:"🎨 Sublimación"},
+    ilustracion:{K:6,ltres:1.5,pathomit:6,roundcoords:2,blurdelta:10,qtres:1,scale:1,icon:"✏️",name:"✏️ Ilustración"},
+    logo:{K:2,ltres:1,pathomit:0,roundcoords:3,blurdelta:0,qtres:0.1,scale:1,icon:"🅻",name:"🅻 Logo"}
   };
+
+  function applyProfile(name){
+    const p=profiles[name];
+    if(!p)return;
+    profileSelect.value=name;
+    kInput.value=p.K; kVal.textContent=p.K;
+    ltresInput.value=p.ltres; ltresVal.textContent=p.ltres;
+    pathomitRange.value=pathomitNum.value=p.pathomit;
+    roundRange.value=roundNum.value=p.roundcoords;
+    blurRange.value=blurNum.value=p.blurdelta;
+    qtresRange.value=qtresNum.value=p.qtres;
+    scaleRange.value=scaleNum.value=p.scale;
+    currentProfileName=p.name;
+    showMsg(p.icon,`Perfil aplicado: ${p.name} → K=${p.K}, ltres=${p.ltres}, pathomit=${p.pathomit}, roundcoords=${p.roundcoords}, blurdelta=${p.blurdelta}, qtres=${p.qtres}, scale=${p.scale}`,name);
+    updateStatus("Estado: esperando imagen", name);
+  }
+
+  profileSelect.onchange=()=>applyProfile(profileSelect.value);
+  window.addEventListener('DOMContentLoaded',()=>applyProfile('sublimacion'));
 
   fileInput.addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;
     const img=new Image();
-    img.onload=()=>{loadedImage=img;status.textContent='Imagen cargada. Pulsa "Vectorizar".';};
+    img.onload=()=>{loadedImage=img;updateStatus("Imagen cargada. Pulsa 'Vectorizar'", profileSelect.value);};
     img.src=URL.createObjectURL(f);
   });
 
@@ -198,12 +260,12 @@
 
   function vectorize(){
     if(!loadedImage){alert('Carga una imagen primero');return;}
-    status.textContent='Vectorizando...';
+    updateStatus("Vectorizando...", profileSelect.value);
     const K=parseInt(kInput.value),ltres=parseFloat(ltresInput.value)||0.5;
     lastSvg=vectorizeImage(loadedImage,K,ltres,1200);
     svgPreview.innerHTML=lastSvg;
     downloadSvg.disabled=false;exportPng.disabled=false;
-    status.textContent='Vectorización lista.';
+    updateStatus("Vectorización lista", profileSelect.value);
   }
   vectorizeBtn.onclick=vectorize;
 
