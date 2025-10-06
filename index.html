@@ -1,11 +1,10 @@
 <!doctype html>
+<html lang="es">
 <head>
-  <html lang="es">
-  <link rel="icon" type="image/svg+xml" 
-href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vectorizador a Color Optimizado - Sublimación y Logos</title>
+  <title>Vectorizador a Color Optimizado - Sublimación y Presets</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
   <style>
     :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#06b6d4}
     body{background:linear-gradient(180deg,#071028 0%,#071826 100%);color:#e6eef6;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;padding:24px}
@@ -13,7 +12,7 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
     header{display:flex;align-items:center;gap:12px}
     h1{margin:0;font-size:20px}
     .card{background:rgba(255,255,255,0.03);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-    .grid{display:grid;grid-template-columns:340px 1fr;gap:16px;margin-top:16px}
+    .grid{display:grid;grid-template-columns:360px 1fr;gap:16px;margin-top:16px}
     label{display:block;margin-top:10px;font-size:13px;color:var(--muted)}
     input[type=file],input[type=range],input[type=number],select{width:100%}
     button{border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
@@ -30,21 +29,21 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
     .adv-row input[type=range]{width:70%}
     .adv-row input[type=number]{width:25%;margin-left:5px}
 
-    /* Colores dinámicos */
+    /* Colores dinámicos por perfil */
     #status.sublimacion, #restoreMsg.sublimacion, #vectorizeBtn.sublimacion {
-      color:#38bdf8; border-color:#38bdf8; background:rgba(56,189,248,0.1);
+      color:#38bdf8; border-color:#38bdf8; background:rgba(56,189,248,0.06);
     }
     #status.ilustracion, #restoreMsg.ilustracion, #vectorizeBtn.ilustracion {
-      color:#facc15; border-color:#facc15; background:rgba(250,204,21,0.1);
+      color:#facc15; border-color:#facc15; background:rgba(250,204,21,0.06);
     }
     #status.logo, #restoreMsg.logo, #vectorizeBtn.logo {
-      color:#4ade80; border-color:#4ade80; background:rgba(74,222,128,0.1);
+      color:#4ade80; border-color:#4ade80; background:rgba(74,222,128,0.06);
     }
     #status.sticker, #restoreMsg.sticker, #vectorizeBtn.sticker {
-      color:#a855f7; border-color:#a855f7; background:rgba(168,85,247,0.1);
+      color:#a855f7; border-color:#a855f7; background:rgba(168,85,247,0.06);
     }
     #status.texto, #restoreMsg.texto, #vectorizeBtn.texto {
-      color:#fb7185; border-color:#fb7185; background:rgba(251,113,133,0.1);
+      color:#fb7185; border-color:#fb7185; background:rgba(251,113,133,0.06);
     }
 
     #restoreMsg{
@@ -66,20 +65,35 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
       background:#334155;
       color:#e6eef6;
     }
+
+    /* Vista previa de presets */
+    .preset-preview {
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-top:8px;
+    }
+    #presetCanvas { border-radius:8px; background:#fff; width:140px; height:140px; display:block; }
+    #presetSvgPreview { background:#fff;border-radius:8px;padding:6px; width:140px; height:140px; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#000 }
+    .preview-label{font-size:12px;color:var(--muted);margin-top:6px}
+    .controls-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .hint{font-size:12px;color:#9aa4b2;margin-top:6px}
   </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>Vectorizador a Color para Sublimación, Logos y Stickers</h1>
+    <h1>Vectorizador a Color para Sublimación, Logos y Stickers — (listo para GitHub)</h1>
   </header>
 
   <div class="card grid">
     <div>
       <label>1) Selecciona una imagen</label>
       <input id="fileInput" type="file" accept="image/*">
+
       <label>2) Número de colores (2–12): <span id="kVal">4</span></label>
       <input id="kInput" type="range" min="2" max="12" value="4">
+
       <label>3) Nivel de detalle (ltres 0–10): <span id="ltresVal">0.5</span></label>
       <input id="ltresInput" type="range" min="0" max="10" step="0.1" value="0.5">
 
@@ -106,6 +120,15 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
             <option value="sticker">💫 Stickers con degradado</option>
             <option value="texto">🔤 Textos finos / Tipografía</option>
           </select>
+        </div>
+
+        <div class="preset-preview">
+          <canvas id="presetCanvas" width="140" height="140" aria-hidden="true"></canvas>
+          <div id="presetSvgPreview" aria-hidden="true">SVG preview</div>
+        </div>
+        <div class="controls-row">
+          <button id="regenPreview">Regenerar vista previa</button>
+          <div class="hint">La vista previa aplica el perfil seleccionado en pequeña escala (vectorización real con ImageTracer).</div>
         </div>
 
         <div id="restoreMsg" class="sublimacion">🎨 Perfil aplicado: Sublimación → K=4, ltres=0.5, pathomit=8, roundcoords=2, blurdelta=20, qtres=1, scale=1</div>
@@ -155,139 +178,299 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
   </div>
 </div>
 
+<!-- ImageTracer CDN (funciona en GitHub Pages) -->
 <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
 <script>
-  const fileInput=document.getElementById('fileInput');
-  const kInput=document.getElementById('kInput'); const kVal=document.getElementById('kVal');
-  const ltresInput=document.getElementById('ltresInput'); const ltresVal=document.getElementById('ltresVal');
-  const vectorizeBtn=document.getElementById('vectorizeBtn');
-  const svgPreview=document.getElementById('svgPreview');
-  const downloadSvg=document.getElementById('downloadSvg');
-  const exportPng=document.getElementById('exportPng');
-  const status=document.getElementById('status');
-  const advPanel=document.getElementById('advancedPanel');
-  const toggleAdv=document.getElementById('toggleAdvanced');
-  const profileSelect=document.getElementById('profileSelect');
-  const restoreMsg=document.getElementById('restoreMsg');
+  // --- Elementos DOM ---
+  const fileInput = document.getElementById('fileInput');
+  const kInput = document.getElementById('kInput'); const kVal = document.getElementById('kVal');
+  const ltresInput = document.getElementById('ltresInput'); const ltresVal = document.getElementById('ltresVal');
+  const vectorizeBtn = document.getElementById('vectorizeBtn');
+  const svgPreview = document.getElementById('svgPreview');
+  const downloadSvg = document.getElementById('downloadSvg');
+  const exportPng = document.getElementById('exportPng');
+  const status = document.getElementById('status');
+  const advPanel = document.getElementById('advancedPanel');
+  const toggleAdv = document.getElementById('toggleAdvanced');
+  const profileSelect = document.getElementById('profileSelect');
+  const restoreMsg = document.getElementById('restoreMsg');
 
-  const pathomitRange=document.getElementById('pathomitRange'), pathomitNum=document.getElementById('pathomitNum');
-  const roundRange=document.getElementById('roundRange'), roundNum=document.getElementById('roundNum');
-  const blurRange=document.getElementById('blurRange'), blurNum=document.getElementById('blurNum');
-  const qtresRange=document.getElementById('qtresRange'), qtresNum=document.getElementById('qtresNum');
-  const scaleRange=document.getElementById('scaleRange'), scaleNum=document.getElementById('scaleNum');
+  const pathomitRange = document.getElementById('pathomitRange'), pathomitNum = document.getElementById('pathomitNum');
+  const roundRange = document.getElementById('roundRange'), roundNum = document.getElementById('roundNum');
+  const blurRange = document.getElementById('blurRange'), blurNum = document.getElementById('blurNum');
+  const qtresRange = document.getElementById('qtresRange'), qtresNum = document.getElementById('qtresNum');
+  const scaleRange = document.getElementById('scaleRange'), scaleNum = document.getElementById('scaleNum');
 
-  let loadedImage=null,lastSvg='';
-  let currentProfileName="🎨 Sublimación"; 
+  const presetCanvas = document.getElementById('presetCanvas');
+  const presetSvgPreview = document.getElementById('presetSvgPreview');
+  const regenPreviewBtn = document.getElementById('regenPreview');
 
-  kInput.addEventListener('input',()=>kVal.textContent=kInput.value);
-  ltresInput.addEventListener('input',()=>ltresVal.textContent=ltresInput.value);
+  // --- Estado ---
+  let loadedImage = null, lastSvg = '';
+  let currentProfileName = "🎨 Sublimación";
 
-  function sync(r,n){r.addEventListener('input',()=>n.value=r.value);n.addEventListener('input',()=>r.value=n.value);}
+  // --- Sincronizaciones UI ---
+  kInput.addEventListener('input', ()=> kVal.textContent = kInput.value);
+  ltresInput.addEventListener('input', ()=> ltresVal.textContent = ltresInput.value);
+
+  function sync(r,n){ r.addEventListener('input', ()=> n.value = r.value); n.addEventListener('input', ()=> r.value = n.value); }
   sync(pathomitRange,pathomitNum); sync(roundRange,roundNum);
   sync(blurRange,blurNum); sync(qtresRange,qtresNum); sync(scaleRange,scaleNum);
 
-  toggleAdv.onclick=()=>{
-    advPanel.style.display=(advPanel.style.display==='none'||advPanel.style.display==='')?'block':'none';
-    toggleAdv.textContent=advPanel.style.display==='block'?'⚙️ Ocultar ajustes avanzados':'⚙️ Mostrar ajustes avanzados';
+  toggleAdv.onclick = ()=> {
+    advPanel.style.display = (advPanel.style.display==='none' || advPanel.style.display==='') ? 'block' : 'none';
+    toggleAdv.textContent = advPanel.style.display==='block' ? '⚙️ Ocultar ajustes avanzados' : '⚙️ Mostrar ajustes avanzados';
   };
 
-  function showMsg(icon,text,profileKey){
+  function showMsg(icon, text, profileKey){
     restoreMsg.innerHTML = `<span class="icon">${icon}</span> ${text}`;
     restoreMsg.className = profileKey;
   }
 
   function updateStatus(msg, profileKey){
     status.className = profileKey;
-    status.textContent=`${msg} · Perfil activo: ${currentProfileName}`;
+    status.textContent = `${msg} · Perfil activo: ${currentProfileName}`;
     vectorizeBtn.className = profileKey;
   }
 
+  // --- Perfiles (presets) ---
   const profiles = {
-    sublimacion:{K:4,ltres:0.5,pathomit:8,roundcoords:2,blurdelta:20,qtres:1,scale:1,icon:"🎨",name:"🎨 Sublimación"},
-    ilustracion:{K:7,ltres:1.5,pathomit:6,roundcoords:2,blurdelta:10,qtres:0.8,scale:1,icon:"✏️",name:"✏️ Ilustración"},
-    logo:{K:2,ltres:1,pathomit:0,roundcoords:3,blurdelta:0,qtres:0.1,scale:1,icon:"🅻",name:"🅻 Logo"},
-    sticker:{K:8,ltres:0.4,pathomit:5,roundcoords:2,blurdelta:15,qtres:0.5,scale:1,icon:"💫",name:"💫 Stickers con degradado"},
-    texto:{K:3,ltres:0.2,pathomit:2,roundcoords:1,blurdelta:0,qtres:0.3,scale:1,icon:"🔤",name:"🔤 Textos finos / Tipografía"}
+    sublimacion: {K:4, ltres:0.5, pathomit:8, roundcoords:2, blurdelta:20, qtres:1, scale:1, icon:"🎨", name:"🎨 Sublimación"},
+    ilustracion: {K:7, ltres:1.5, pathomit:6, roundcoords:2, blurdelta:10, qtres:0.8, scale:1, icon:"✏️", name:"✏️ Ilustración"},
+    logo: {K:2, ltres:1, pathomit:0, roundcoords:3, blurdelta:0, qtres:0.1, scale:1, icon:"🅻", name:"🅻 Logo"},
+    sticker: {K:8, ltres:0.4, pathomit:5, roundcoords:2, blurdelta:15, qtres:0.5, scale:1, icon:"💫", name:"💫 Stickers con degradado"},
+    texto: {K:3, ltres:0.2, pathomit:2, roundcoords:1, blurdelta:0, qtres:0.3, scale:1, icon:"🔤", name:"🔤 Textos finos / Tipografía"}
   };
 
   function applyProfile(name){
-    const p=profiles[name];
-    if(!p)return;
-    profileSelect.value=name;
-    kInput.value=p.K; kVal.textContent=p.K;
-    ltresInput.value=p.ltres; ltresVal.textContent=p.ltres;
-    pathomitRange.value=pathomitNum.value=p.pathomit;
-    roundRange.value=roundNum.value=p.roundcoords;
-    blurRange.value=blurNum.value=p.blurdelta;
-    qtresRange.value=qtresNum.value=p.qtres;
-    scaleRange.value=scaleNum.value=p.scale;
-    currentProfileName=p.name;
-    showMsg(p.icon,`Perfil aplicado: ${p.name} → K=${p.K}, ltres=${p.ltres}, pathomit=${p.pathomit}, roundcoords=${p.roundcoords}, blurdelta=${p.blurdelta}, qtres=${p.qtres}, scale=${p.scale}`,name);
+    const p = profiles[name];
+    if(!p) return;
+    profileSelect.value = name;
+    kInput.value = p.K; kVal.textContent = p.K;
+    ltresInput.value = p.ltres; ltresVal.textContent = p.ltres;
+    pathomitRange.value = pathomitNum.value = p.pathomit;
+    roundRange.value = roundNum.value = p.roundcoords;
+    blurRange.value = blurNum.value = p.blurdelta;
+    qtresRange.value = qtresNum.value = p.qtres;
+    scaleRange.value = scaleNum.value = p.scale;
+    currentProfileName = p.name;
+    showMsg(p.icon, `Perfil aplicado: ${p.name} → K=${p.K}, ltres=${p.ltres}, pathomit=${p.pathomit}, roundcoords=${p.roundcoords}, blurdelta=${p.blurdelta}, qtres=${p.qtres}, scale=${p.scale}`, name);
     updateStatus("Estado: esperando imagen", name);
+    // regenerar previa automáticamente
+    generateAndShowPreview(name);
   }
 
-  profileSelect.onchange=()=>applyProfile(profileSelect.value);
-  window.addEventListener('DOMContentLoaded',()=>applyProfile('sublimacion'));
+  profileSelect.onchange = ()=> applyProfile(profileSelect.value);
+  window.addEventListener('DOMContentLoaded', ()=> applyProfile('sublimacion'));
 
-  fileInput.addEventListener('change',e=>{
-    const f=e.target.files[0];if(!f)return;
-    const img=new Image();
-    img.onload=()=>{loadedImage=img;updateStatus("Imagen cargada. Pulsa 'Vectorizar'", profileSelect.value);};
-    img.src=URL.createObjectURL(f);
+  fileInput.addEventListener('change', e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const img = new Image();
+    img.onload = ()=> { loadedImage = img; updateStatus("Imagen cargada. Pulsa 'Vectorizar'", profileSelect.value); };
+    img.src = URL.createObjectURL(f);
   });
 
-  function sampleImage(img,maxDim){
-    const canvas=document.createElement('canvas');
-    const ctx=canvas.getContext('2d');
-    const scale=Math.min(1,maxDim/Math.max(img.width,img.height));
-    canvas.width=img.width*scale;canvas.height=img.height*scale;
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    return ctx.getImageData(0,0,canvas.width,canvas.height);
+  // --- Sample generator para la vista previa ---
+  // Dibuja en un canvas pequeño una composición (degradado + formas + texto)
+  function drawSampleToCanvas(canvas){
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    // fondo degradado
+    const g = ctx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0, '#6b21a8'); g.addColorStop(0.6, '#f97316'); g.addColorStop(1,'#facc15');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    // planeta (círculo con sombra)
+    ctx.save();
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.arc(w*0.28, h*0.36, w*0.14, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.restore();
+
+    // estrella (silueta)
+    ctx.save();
+    ctx.translate(w*0.72, h*0.28);
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+      ctx.lineTo(Math.cos((18 + i*72)/180*Math.PI) * w*0.12, -Math.sin((18 + i*72)/180*Math.PI) * w*0.12);
+      ctx.lineTo(Math.cos((54 + i*72)/180*Math.PI) * w*0.05, -Math.sin((54 + i*72)/180*Math.PI) * w*0.05);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fill();
+    ctx.restore();
+
+    // curita (rectángulo con borde)
+    ctx.save();
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(w*0.18, h*0.62, w*0.26, h*0.12);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(w*0.2, h*0.65, w*0.22, h*0.06);
+    ctx.restore();
+
+    // texto pequeño
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.font = `${Math.round(h*0.08)}px sans-serif`;
+    ctx.fillText('FOR', w*0.12, h*0.22);
+    ctx.fillText('REAL', w*0.12, h*0.32);
+    ctx.restore();
+    return ctx.getImageData(0,0,w,h);
   }
 
-  function buildOptions(K,ltres){
+  function buildOptionsFromProfile(profileName){
+    const p = profiles[profileName];
     return {
-      numberofcolors:K,
-      ltres:Math.max(0.1,ltres),
-      qtres:parseFloat(qtresNum.value),
-      pathomit:parseInt(pathomitNum.value),
-      roundcoords:parseFloat(roundNum.value),
-      blurdelta:parseInt(blurNum.value),
-      scale:parseFloat(scaleNum.value),
-      viewbox:true,
-      desc:false
+      numberofcolors: p.K,
+      ltres: Math.max(0.05, p.ltres),
+      qtres: p.qtres,
+      pathomit: p.pathomit,
+      roundcoords: p.roundcoords,
+      blurdelta: p.blurdelta,
+      scale: p.scale,
+      viewbox: true,
+      desc: false
     };
   }
 
-  function vectorizeImage(img,K,ltres,maxDim){
-    const imgData=sampleImage(img,maxDim);
-    return ImageTracer.imagedataToSVG(imgData,buildOptions(K,ltres));
+  // Vectoriza un ImageData usando ImageTracer y devuelve el SVG (string)
+  function imagedataToSVGAsync(imgData, options){
+    // ImageTracer.imagedataToSVG is synchronous; wrap to keep consistent usage
+    try{
+      const svg = ImageTracer.imagedataToSVG(imgData, options);
+      return svg;
+    } catch (e){
+      console.error('Error ImageTracer:', e);
+      return null;
+    }
+  }
+
+  // Genera la vista previa (canvas pequeña + vectoriza y muestra SVG pequeño)
+  function generateAndShowPreview(profileName){
+    const canvas = presetCanvas;
+    const ctx = canvas.getContext('2d');
+    // limpiar
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // dibujar sample
+    const imgData = drawSampleToCanvas(canvas);
+    // mostrar el raster en el canvas (ya está)
+    // vectorizar a pequeña escala con los mismos parámetros
+    presetSvgPreview.innerHTML = 'Generando preview...';
+    setTimeout(()=>{ // pequeño timeout para que el DOM actualice el texto
+      const opts = buildOptionsFromProfile(profileName);
+      // Para previews, reducimos slightly max colors for performance? no, usamos tal cual
+      const svg = imagedataToSVGAsync(imgData, opts);
+      if(svg){
+        // reducir visualmente el svg para caber en la caja:
+        // lo mostramos directamente (ImageTracer devuelve <svg ...>)
+        // envolver en un contenedor que limite tamaño
+        presetSvgPreview.innerHTML = svg;
+        // forzamos estilos internos para que quepan (escala vía viewBox)
+        const innerSvg = presetSvgPreview.querySelector('svg');
+        if(innerSvg){
+          innerSvg.setAttribute('width','120');
+          innerSvg.setAttribute('height','120');
+          innerSvg.style.maxWidth = '120px';
+          innerSvg.style.maxHeight = '120px';
+        }
+      } else {
+        presetSvgPreview.innerHTML = 'Error en preview';
+      }
+    }, 20);
+  }
+
+  regenPreviewBtn.addEventListener('click', ()=> generateAndShowPreview(profileSelect.value));
+
+  // --- Opciones y vectorización principal ---
+  function buildOptions(K, ltres){
+    return {
+      numberofcolors: K,
+      ltres: Math.max(0.05, ltres),
+      qtres: parseFloat(qtresNum.value),
+      pathomit: parseInt(pathomitNum.value),
+      roundcoords: parseFloat(roundNum.value),
+      blurdelta: parseInt(blurNum.value),
+      scale: parseFloat(scaleNum.value),
+      viewbox: true,
+      desc: false
+    };
+  }
+
+  function sampleImage(img, maxDim){
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return ctx.getImageData(0,0,canvas.width,canvas.height);
+  }
+
+  function vectorizeImage(img, K, ltres, maxDim){
+    const imgData = sampleImage(img, maxDim);
+    return ImageTracer.imagedataToSVG(imgData, buildOptions(K, ltres));
   }
 
   function vectorize(){
-    if(!loadedImage){alert('Carga una imagen primero');return;}
+    if(!loadedImage){ alert('Carga una imagen primero'); return; }
     updateStatus("Vectorizando...", profileSelect.value);
-    const K=parseInt(kInput.value),ltres=parseFloat(ltresInput.value)||0.5;
-    lastSvg=vectorizeImage(loadedImage,K,ltres,1200);
-    svgPreview.innerHTML=lastSvg;
-    downloadSvg.disabled=false;exportPng.disabled=false;
-    updateStatus("Vectorización lista", profileSelect.value);
+    const K = parseInt(kInput.value), ltres = parseFloat(ltresInput.value) || 0.5;
+    // vectorización (puede consumir CPU en imágenes grandes)
+    try{
+      lastSvg = vectorizeImage(loadedImage, K, ltres, 1200);
+      svgPreview.innerHTML = lastSvg;
+      downloadSvg.disabled = false; exportPng.disabled = false;
+      updateStatus("Vectorización lista", profileSelect.value);
+    } catch(e){
+      console.error(e);
+      alert('Error durante la vectorización. Revisa la consola.');
+      updateStatus("Error", profileSelect.value);
+    }
   }
-  vectorizeBtn.onclick=vectorize;
 
-  downloadSvg.onclick=()=>{
-    const blob=new Blob([lastSvg],{type:'image/svg+xml'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download='design_color.svg';a.click();
+  vectorizeBtn.onclick = vectorize;
+
+  downloadSvg.onclick = ()=>{
+    const blob = new Blob([lastSvg], {type:'image/svg+xml'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'design_color.svg'; a.click();
   };
 
-  exportPng.onclick=()=>{
-    if(!lastSvg){alert('No hay SVG');return;}
-    const pxW=3000,pxH=3000;
-    const img=new Image();
-    img.onload=()=>{
-      const canvas=document.createElement('canvas');canvas.width=pxW;canvas.height=pxH;
-      const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,pxW,pxH);
+  exportPng.onclick = ()=>{
+    if(!lastSvg){ alert('No hay SVG'); return; }
+    const pxW = 3000, pxH = 3000;
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas'); canvas.width = pxW; canvas.height = pxH;
+      const ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,pxW,pxH);
       ctx.drawImage(img,0,0,pxW,pxH);
       canvas.toBlob(b=>{
-        const a=document.create
+        const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+        a.download = 'design_300dpi.png'; a.click();
+      }, 'image/png', 1.0);
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(lastSvg)));
+  };
+
+  // --- Inicialización: aplicar perfil por defecto y generar preview ---
+  window.addEventListener('load', ()=>{
+    applyProfile('sublimacion');
+    // generate preview already called inside applyProfile
+  });
+
+  // Si el usuario cambia manualmente sliders que afectan la preview, puedes regenerar la preview opcionalmente:
+  // Aquí hacemos que al cambiar K o ltres se actualice la preview en background (suave)
+  let previewDebounce;
+  [kInput, ltresInput, qtresRange, pathomitRange, blurRange, roundRange].forEach(el=>{
+    el.addEventListener('input', ()=>{
+      clearTimeout(previewDebounce);
+      previewDebounce = setTimeout(()=> generateAndShowPreview(profileSelect.value), 300);
+    });
+  });
+
+</script>
+</body>
+</html>
