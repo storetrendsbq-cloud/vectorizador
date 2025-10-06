@@ -2,7 +2,7 @@
 <head>
   <html lang="es">
   <link rel="icon" type="image/svg+xml" 
-href="data:image/svg+xml,<svg xmlns='http://www.w3
+href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Vectorizador a Color Optimizado - Sublimación y Logos</title>
@@ -40,6 +40,12 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
     #status.logo, #restoreMsg.logo, #vectorizeBtn.logo {
       color:#4ade80; border-color:#4ade80; background:rgba(74,222,128,0.1);
     }
+    #status.sticker, #restoreMsg.sticker, #vectorizeBtn.sticker {
+      color:#a855f7; border-color:#a855f7; background:rgba(168,85,247,0.1);
+    }
+    #status.texto, #restoreMsg.texto, #vectorizeBtn.texto {
+      color:#fb7185; border-color:#fb7185; background:rgba(251,113,133,0.1);
+    }
 
     #restoreMsg{
       margin-top:8px;
@@ -56,9 +62,7 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
     #vectorizeBtn { color:#012; }
     #vectorizeBtn.ilustracion { color:#000; } /* contraste con amarillo */
 
-    /* Botones secundarios neutros */
-    #downloadSvg,
-    #exportPng {
+    #downloadSvg, #exportPng {
       background:#334155;
       color:#e6eef6;
     }
@@ -67,7 +71,7 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
 <body>
 <div class="container">
   <header>
-    <h1>Vectorizador a Color para Sublimación y Logos</h1>
+    <h1>Vectorizador a Color para Sublimación, Logos y Stickers</h1>
   </header>
 
   <div class="card grid">
@@ -78,9 +82,11 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
       <input id="kInput" type="range" min="2" max="12" value="4">
       <label>3) Nivel de detalle (ltres 0–10): <span id="ltresVal">0.5</span></label>
       <input id="ltresInput" type="range" min="0" max="10" step="0.1" value="0.5">
+
       <div style="margin-top:12px">
         <button id="vectorizeBtn">Vectorizar a color</button>
       </div>
+
       <div style="margin-top:12px" class="row">
         <button id="downloadSvg" disabled>Descargar SVG</button>
         <button id="exportPng" disabled>Exportar PNG (300 DPI)</button>
@@ -91,13 +97,14 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
       </div>
 
       <div class="advanced" id="advancedPanel">
-
         <div class="adv-row">
           <label>Perfil rápido:</label>
           <select id="profileSelect">
             <option value="sublimacion">🎨 Sublimación</option>
             <option value="ilustracion">✏️ Ilustración</option>
             <option value="logo">🅻 Logo</option>
+            <option value="sticker">💫 Stickers con degradado</option>
+            <option value="texto">🔤 Textos finos / Tipografía</option>
           </select>
         </div>
 
@@ -128,19 +135,17 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
           <input id="scaleRange" type="range" min="0.5" max="3" step="0.1" value="1">
           <input id="scaleNum" type="number" min="0.5" max="3" step="0.1" value="1">
         </div>
-
       </div>
 
       <div id="status" class="sublimacion">Estado: esperando imagen · Perfil activo: 🎨 Sublimación</div>
 
       <div class="guide">
         <h2>Guía rápida</h2>
-        <p><strong>🎨 Diseños planos (sublimación):</strong><br>
-        Colores = 4 · Detalle = 0.5.</p>
-        <p><strong>✏️ Ilustraciones:</strong><br>
-        Colores = 6–8 · Detalle = 1–2.</p>
-        <p><strong>🅻 Logos / Tipografía:</strong><br>
-        Colores = 2 · Detalle = 1.</p>
+        <p><strong>🎨 Sublimación:</strong><br>Colores = 4 · Detalle = 0.5.</p>
+        <p><strong>✏️ Ilustración:</strong><br>Colores = 6–8 · Detalle = 1–2.</p>
+        <p><strong>🅻 Logos:</strong><br>Colores = 2 · Detalle = 1.</p>
+        <p><strong>💫 Stickers con degradado:</strong><br>Colores = 8 · Detalle = 0.4.</p>
+        <p><strong>🔤 Textos finos:</strong><br>Colores = 3 · Detalle = 0.2.</p>
       </div>
     </div>
 
@@ -199,8 +204,10 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
 
   const profiles = {
     sublimacion:{K:4,ltres:0.5,pathomit:8,roundcoords:2,blurdelta:20,qtres:1,scale:1,icon:"🎨",name:"🎨 Sublimación"},
-    ilustracion:{K:6,ltres:1.5,pathomit:6,roundcoords:2,blurdelta:10,qtres:1,scale:1,icon:"✏️",name:"✏️ Ilustración"},
-    logo:{K:2,ltres:1,pathomit:0,roundcoords:3,blurdelta:0,qtres:0.1,scale:1,icon:"🅻",name:"🅻 Logo"}
+    ilustracion:{K:7,ltres:1.5,pathomit:6,roundcoords:2,blurdelta:10,qtres:0.8,scale:1,icon:"✏️",name:"✏️ Ilustración"},
+    logo:{K:2,ltres:1,pathomit:0,roundcoords:3,blurdelta:0,qtres:0.1,scale:1,icon:"🅻",name:"🅻 Logo"},
+    sticker:{K:8,ltres:0.4,pathomit:5,roundcoords:2,blurdelta:15,qtres:0.5,scale:1,icon:"💫",name:"💫 Stickers con degradado"},
+    texto:{K:3,ltres:0.2,pathomit:2,roundcoords:1,blurdelta:0,qtres:0.3,scale:1,icon:"🔤",name:"🔤 Textos finos / Tipografía"}
   };
 
   function applyProfile(name){
@@ -283,13 +290,4 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3
       const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,pxW,pxH);
       ctx.drawImage(img,0,0,pxW,pxH);
       canvas.toBlob(b=>{
-        const a=document.createElement('a');a.href=URL.createObjectURL(b);
-        a.download='design_300dpi.png';a.click();
-      },'image/png',1.0);
-    };
-    img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(lastSvg)));
-  };
-</script>
-</body>
-</html>
-
+        const a=document.create
