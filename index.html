@@ -24,6 +24,7 @@
     .examples{margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
     .examples div{background:#1e293b;padding:8px;border-radius:8px;text-align:center;font-size:12px;color:#cbd5e1;display:flex;flex-direction:column;gap:6px;align-items:center}
     .examples svg{max-width:100%;border-radius:6px;background:#fff}
+    #status{margin-top:10px;color:#d1d5db;font-size:13px}
   </style>
 </head>
 <body>
@@ -42,7 +43,7 @@
       <input id="fileInput" type="file" accept="image/*">
       <label>2) Número de colores (2–12): <span id="kVal">6</span></label>
       <input id="kInput" type="range" min="2" max="12" value="6">
-      <label>3) Nivel de detalle (0–10): <span id="ltresVal">1</span></label>
+      <label>3) Nivel de detalle (ltres 0–10): <span id="ltresVal">1</span></label>
       <input id="ltresInput" type="range" min="0" max="10" value="1">
       <div style="margin-top:12px">
         <button id="vectorizeBtn">Vectorizar a color</button>
@@ -52,11 +53,13 @@
         <button id="exportPng" disabled>Exportar PNG (300 DPI)</button>
       </div>
 
+      <div id="status" >Estado: esperando imagen</div>
+
       <div class="guide">
         <h2>Guía rápida de uso</h2>
-        <p><strong>Logos / Íconos:</strong><br> Colores = 2–4 · Detalle = bajo.<br> Resultado limpio, ideal para estampados simples.</p>
-        <p><strong>Ilustraciones / Dibujos:</strong><br> Colores = 5–8 · Detalle = medio.<br> Conserva detalle y mantiene bordes definidos.</p>
-        <p><strong>Fotografías / Diseños complejos:</strong><br> Colores = 8–12 · Detalle = alto.<br> Mantiene sombras y matices principales.</p>
+        <p><strong>Logos / Íconos:</strong><br> Colores = 2–4 · Detalle = bajo.</p>
+        <p><strong>Ilustraciones / Dibujos:</strong><br> Colores = 5–8 · Detalle = medio.</p>
+        <p><strong>Fotografías / Diseños complejos:</strong><br> Colores = 8–12 · Detalle = alto.</p>
         <p><strong>Consejo:</strong> Para sublimar, exporta siempre en PNG a 300 DPI y ajusta el tamaño en pulgadas según la prenda.</p>
         <div class="examples">
           <div>
@@ -84,6 +87,7 @@
   </div>
 </div>
 
+<!-- ImageTracer.js desde CDN -->
 <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
 <script>
   const fileInput=document.getElementById('fileInput');
@@ -101,65 +105,161 @@
   const dl2=document.getElementById('dl2');
   const dl6=document.getElementById('dl6');
   const dl10=document.getElementById('dl10');
+  const status=document.getElementById('status');
 
-  let loadedImage=null;let lastSvg='';let lastEx2='',lastEx6='',lastEx10='';
+  let loadedImage=null; let lastSvg=''; let lastEx2='', lastEx6='', lastEx10='';
 
   kInput.addEventListener('input',()=>kVal.textContent=kInput.value);
   ltresInput.addEventListener('input',()=>ltresVal.textContent=ltresInput.value);
 
-  fileInput.addEventListener('change',e=>{
-    const f=e.target.files[0];if(!f)return;
+  fileInput.addEventListener('change', e=>{
+    const f=e.target.files[0];
+    if(!f) return;
     const img=new Image();
-    img.onload=()=>{loadedImage=img;generateExamples();};
-    img.src=URL.createObjectURL(f);
+    img.onload = ()=>{ loadedImage = img; status.textContent = 'Imagen cargada. Generando ejemplos...'; generateExamples(); };
+    img.onerror = ()=>{ alert('No se pudo cargar la imagen. Prueba con otro archivo.'); };
+    img.src = URL.createObjectURL(f);
   });
 
-  function vectorizeCustom(img,K,ltres){
-    return new Promise(resolve=>{
-      ImageTracer.imageToSVG(img,(svgstr)=>{resolve(svgstr);},{
-        numberofcolors:K,
-        ltres:ltres,
-        qtres:1,
-        pathomit:1
-      });
-    });
+  // toma una imagen y devuelve ImageData escalado al maxDim
+  function sampleImageToImageData(img, maxDim){
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return ctx.getImageData(0,0,canvas.width,canvas.height);
   }
 
+  // opciones recomendadas para ImageTracer.imagedataToSVG
+  function buildOptions(K, ltres){
+    return {
+      numberofcolors: K,
+      colorsampling: 2,          // usar sampling determinístico
+      colorquantcycles: 3,      // ciclos de quantización
+      mincolorratio: 0.0005,    // permitir colores pequeños
+      ltres: Math.max(0.1, ltres), // line threshold (1 ~ normal). no dejar 0 exacto
+      qtres: 1,
+      pathomit: 1,              // 1 mantiene trazados pequeños; sube si quieres limpiar
+      blurradius: 0,
+      blurdelta: 20,
+      scale: 1,
+      roundcoords: 1,
+      viewbox: true,
+      desc: false
+    };
+  }
+
+  // vectoriza a partir de ImageData (usa imagedataToSVG para mejor control)
+  function imagedataVectorize(imgData, options){
+    // imagedataToSVG es síncrono y devuelve string
+    try {
+      return ImageTracer.imagedataToSVG(imgData, options);
+    } catch(e) {
+      console.error('Error en imagedataToSVG:', e);
+      return '';
+    }
+  }
+
+  async function vectorizeCustom(K, ltres, maxDim){
+    if(!loadedImage) return '';
+    // preparar ImageData a la resolución deseada
+    const imgData = sampleImageToImageData(loadedImage, maxDim);
+    const opts = buildOptions(K, ltres);
+    // trazar usando ImageData
+    const svg = imagedataVectorize(imgData, opts);
+    return svg || '';
+  }
+
+  // Genera las mini-previews (resolución pequeña para UX)
   async function generateExamples(){
-    ex2.innerHTML='Generando...';ex6.innerHTML='Generando...';ex10.innerHTML='Generando...';
-    dl2.disabled=true;dl6.disabled=true;dl10.disabled=true;
-    lastEx2=await vectorizeCustom(loadedImage,2,1);
-    lastEx6=await vectorizeCustom(loadedImage,6,1);
-    lastEx10=await vectorizeCustom(loadedImage,10,1);
-    ex2.innerHTML=lastEx2;ex6.innerHTML=lastEx6;ex10.innerHTML=lastEx10;
-    dl2.disabled=false;dl6.disabled=false;dl10.disabled=false;
+    if(!loadedImage) return;
+    status.textContent = 'Generando ejemplos (2,6,10 colores)...';
+    ex2.innerHTML = 'Generando...';
+    ex6.innerHTML = 'Generando...';
+    ex10.innerHTML = 'Generando...';
+    dl2.disabled = dl6.disabled = dl10.disabled = true;
+    // usar maxDim pequeño para vistas
+    lastEx2 = await vectorizeCustom(2, 1.0, 400);
+    lastEx6 = await vectorizeCustom(6, 1.0, 400);
+    lastEx10 = await vectorizeCustom(10, 1.0, 400);
+    ex2.innerHTML = lastEx2 || '(error)';
+    ex6.innerHTML = lastEx6 || '(error)';
+    ex10.innerHTML = lastEx10 || '(error)';
+    dl2.disabled = !lastEx2;
+    dl6.disabled = !lastEx6;
+    dl10.disabled = !lastEx10;
+    status.textContent = 'Ejemplos listos. Ajusta parámetros y pulsa "Vectorizar a color".';
   }
 
+  // Vectorizado final: usar mayor resolución para más detalle
   async function vectorize(){
-    if(!loadedImage){alert('Primero carga una imagen');return;}
-    const K=parseInt(kInput.value);const ltres=parseInt(ltresInput.value);
-    lastSvg=await vectorizeCustom(loadedImage,K,ltres);
-    svgPreview.innerHTML=lastSvg;
-    downloadSvg.disabled=false;exportPng.disabled=false;
+    if(!loadedImage){ alert('Primero carga una imagen'); return; }
+    status.textContent = 'Vectorizando imagen (esto puede tardar unos segundos)...';
+    vectorizeBtn.disabled = true;
+    const K = parseInt(kInput.value, 10);
+    const ltres = parseFloat(ltresInput.value) || 1;
+    // para el resultado final usamos maxDim mayor (ej. 1200 px). Puedes ajustar.
+    const finalMaxDim = 1200;
+    lastSvg = await vectorizeCustom(K, ltres, finalMaxDim);
+    if(!lastSvg){
+      status.textContent = 'Error: no se generó SVG. Revisa la consola del navegador.';
+      vectorizeBtn.disabled = false;
+      return;
+    }
+    svgPreview.innerHTML = lastSvg;
+    downloadSvg.disabled = false;
+    exportPng.disabled = false;
+    status.textContent = 'Vectorización completada. Descarga o exporta.';
+    vectorizeBtn.disabled = false;
   }
 
-  vectorizeBtn.onclick=vectorize;
+  vectorizeBtn.onclick = vectorize;
 
-  function downloadFile(svg,filename){
-    const blob=new Blob([svg],{type:'image/svg+xml'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  function downloadFile(svgStr, filename){
+    if(!svgStr) return;
+    const blob = new Blob([svgStr], {type: 'image/svg+xml'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
-  downloadSvg.onclick=()=>downloadFile(lastSvg,'design_color.svg');
-  dl2.onclick=()=>downloadFile(lastEx2,'design_2colors.svg');
-  dl6.onclick=()=>downloadFile(lastEx6,'design_6colors.svg');
-  dl10.onclick=()=>downloadFile(lastEx10,'design_10colors.svg');
+  downloadSvg.onclick = ()=> downloadFile(lastSvg, 'design_color.svg');
+  dl2.onclick = ()=> downloadFile(lastEx2, 'design_2colors.svg');
+  dl6.onclick = ()=> downloadFile(lastEx6, 'design_6colors.svg');
+  dl10.onclick = ()=> downloadFile(lastEx10, 'design_10colors.svg');
 
-  exportPng.onclick=()=>{
-    const w=1000,h=1000;const img=new Image();
-    img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);canvas.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='design.png';a.click();});};
-    img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(lastSvg)));
+  // Exportar a PNG usando canvas (300 DPI si quieres: aquí usamos escala fija; cambia si necesitas)
+  exportPng.onclick = ()=>{
+    if(!lastSvg){ alert('No hay SVG generado'); return; }
+    // para conservar nitidez en sublimación, pedimos 300 DPI según tamaño que definas.
+    // El usuario final puede cambiar w/h; aquí usaremos 3000x3000 por ejemplo (10x10 in @300dpi).
+    const pxW = 3000, pxH = 3000;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = pxW; canvas.height = pxH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,pxW,pxH);
+      ctx.drawImage(img, 0, 0, pxW, pxH);
+      canvas.toBlob((b) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = 'design_300dpi.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }, 'image/png', 1.0);
+    };
+    img.onerror = (e)=>{ console.error('Error cargando SVG para exportar PNG', e); alert('No se pudo rasterizar el SVG. Revisa la consola.'); };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(lastSvg)));
   };
+
 </script>
 </body>
 </html>
