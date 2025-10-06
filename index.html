@@ -3,40 +3,87 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vectorizador a Color (Potrace WASM) - Sublimación</title>
+  <title>Vectorizador a Color (Profesional) - Sublimación</title>
   <style>
-    body{background:#0f1724;color:#e6eef6;font-family:Inter,system-ui;padding:20px;margin:0}
-    .container{max-width:1100px;margin:auto}
-    .card{background:rgba(255,255,255,0.05);padding:16px;border-radius:12px;margin-top:16px}
-    .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
-    label{display:block;margin-top:8px;font-size:14px}
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#06b6d4}
+    body{background:linear-gradient(180deg,#071028 0%,#071826 100%);color:#e6eef6;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;padding:24px}
+    .container{max-width:1200px;margin:auto}
+    header{display:flex;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px}
+    .card{background:rgba(255,255,255,0.03);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .grid{display:grid;grid-template-columns:340px 1fr;gap:16px;margin-top:16px}
+    label{display:block;margin-top:10px;font-size:13px;color:var(--muted)}
     input[type=file],input[type=range],input[type=number]{width:100%}
-    #svgPreview{background:#fff;padding:8px;border-radius:8px;min-height:200px;color:#000}
-    button{margin-top:8px;padding:8px 12px;border:none;border-radius:6px;background:#06b6d4;color:#012;cursor:pointer}
-    button:disabled{opacity:0.4}
-    .small{font-size:12px;color:#9aa4b2}
+    button{background:var(--accent);color:#012;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+    button:disabled{opacity:0.4;cursor:not-allowed}
+    #svgPreview{background:#fff;border-radius:8px;min-height:400px;padding:8px;overflow:auto;color:#000}
+    .row{display:flex;gap:8px;align-items:center}
+    .small{font-size:12px;color:var(--muted)}
+    .guide{margin-top:20px;font-size:14px;line-height:1.5;color:#d1d5db}
+    .guide h2{font-size:16px;margin:12px 0 6px;color:#06b6d4}
+    .examples{margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .examples div{background:#1e293b;padding:8px;border-radius:8px;text-align:center;font-size:12px;color:#cbd5e1;display:flex;flex-direction:column;gap:6px;align-items:center}
+    .examples svg{max-width:100%;border-radius:6px;background:#fff}
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>Vectorizador a Color para Sublimación</h1>
+  <header>
+    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='38' height='38'><rect rx='6' width='38' height='38' fill='%2306b6d4'/><text x='50%' y='54%' font-size='16' font-family='Arial' fill='white' text-anchor='middle' dominant-baseline='middle'>V</text></svg>" width="40" height="40">
+    <div>
+      <h1>Vectorizador a Color para Sublimación</h1>
+      <div class="small">Convierte imágenes a vectores multicolor listos para impresión (SVG/PNG 300 DPI)</div>
+    </div>
+  </header>
+
   <div class="card grid">
     <div>
       <label>1) Selecciona una imagen</label>
       <input id="fileInput" type="file" accept="image/*">
-      <label>Número de colores (2-12): <span id="kVal">6</span></label>
+      <label>2) Número de colores (2–12): <span id="kVal">6</span></label>
       <input id="kInput" type="range" min="2" max="12" value="6">
-      <label>Suavizado (0-100): <span id="smoothVal">50</span></label>
+      <label>3) Suavizado (0–100): <span id="smoothVal">50</span></label>
       <input id="smoothness" type="range" min="0" max="100" value="50">
-      <button id="vectorizeBtn">Vectorizar a color</button>
-      <button id="downloadSvg" disabled>Descargar SVG</button>
-      <button id="exportPng" disabled>Exportar PNG (300DPI)</button>
+      <div style="margin-top:12px">
+        <button id="vectorizeBtn">Vectorizar a color</button>
+      </div>
+      <div style="margin-top:12px" class="row">
+        <button id="downloadSvg" disabled>Descargar SVG</button>
+        <button id="exportPng" disabled>Exportar PNG (300 DPI)</button>
+      </div>
+
+      <div class="guide">
+        <h2>Guía rápida de uso</h2>
+        <p><strong>Logos / Íconos:</strong><br> Colores = 2–4 · Suavizado = 60–80.<br> Resultado limpio, ideal para estampados simples.</p>
+        <p><strong>Ilustraciones / Dibujos:</strong><br> Colores = 5–8 · Suavizado = 40–60.<br> Conserva detalle y mantiene bordes definidos.</p>
+        <p><strong>Fotografías / Diseños complejos:</strong><br> Colores = 8–12 · Suavizado = 20–40.<br> Mantiene sombras y matices principales.</p>
+        <p><strong>Consejo:</strong> Para sublimar, exporta siempre en PNG a 300 DPI y ajusta el tamaño en pulgadas según la prenda.</p>
+        <div class="examples">
+          <div>
+            <div><strong>2 colores</strong></div>
+            <div id="ex2">(ejemplo se generará aquí)</div>
+            <button id="dl2" disabled>Descargar SVG 2</button>
+          </div>
+          <div>
+            <div><strong>6 colores</strong></div>
+            <div id="ex6">(ejemplo se generará aquí)</div>
+            <button id="dl6" disabled>Descargar SVG 6</button>
+          </div>
+          <div>
+            <div><strong>10 colores</strong></div>
+            <div id="ex10">(ejemplo se generará aquí)</div>
+            <button id="dl10" disabled>Descargar SVG 10</button>
+          </div>
+        </div>
+      </div>
     </div>
+
     <div>
       <div id="svgPreview">Aquí aparecerá el SVG a color</div>
     </div>
   </div>
 </div>
+
 <script type="module">
   import { init as potraceInit, potrace } from 'https://cdn.jsdelivr.net/npm/esm-potrace-wasm@0.4.1/dist/index.js';
 
@@ -50,7 +97,15 @@
   const downloadSvg=document.getElementById('downloadSvg');
   const exportPng=document.getElementById('exportPng');
 
+  const ex2=document.getElementById('ex2');
+  const ex6=document.getElementById('ex6');
+  const ex10=document.getElementById('ex10');
+  const dl2=document.getElementById('dl2');
+  const dl6=document.getElementById('dl6');
+  const dl10=document.getElementById('dl10');
+
   let loadedImage=null;let lastSvg='';let potraceReady=false;
+  let lastEx2='',lastEx6='',lastEx10='';
   (async()=>{await potraceInit();potraceReady=true;})();
 
   kInput.addEventListener('input',()=>kVal.textContent=kInput.value);
@@ -59,14 +114,14 @@
   fileInput.addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;
     const img=new Image();
-    img.onload=()=>{loadedImage=img};
+    img.onload=()=>{loadedImage=img;generateExamples();};
     img.src=URL.createObjectURL(f);
   });
 
   function euclid2(a,b){return (a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2;}
 
   function sample(img,canvas){
-    const maxDim=800;
+    const maxDim=400;
     let scale=Math.min(maxDim/img.width,maxDim/img.height,1);
     canvas.width=img.width*scale;canvas.height=img.height*scale;
     const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);
@@ -92,13 +147,12 @@
     return centroids;
   }
 
-  async function vectorize(){
-    if(!loadedImage||!potraceReady)return;
-    const K=parseInt(kInput.value);const sm=parseInt(smooth.value);
+  async function vectorizeCustom(K,sm){
+    if(!loadedImage||!potraceReady)return '';
     const canvas=document.createElement('canvas');
     const imgData=sample(loadedImage,canvas);
     const pixels=[];for(let i=0;i<imgData.data.length;i+=4)pixels.push([imgData.data[i],imgData.data[i+1],imgData.data[i+2]]);
-    const centroids=kmeans(pixels, K, 6);
+    const centroids=kmeans(pixels,K,6);
     const groups=[];
     for(let c=0;c<K;c++){
       const mask=document.createElement('canvas');mask.width=imgData.width;mask.height=imgData.height;
@@ -111,12 +165,29 @@
       }
       mctx.putImageData(mimg,0,0);
       const opts={turdsize:Math.max(1,(100-sm)/2),opttolerance:sm/100};
-      const svgMask=await potrace(mask,opts);
-      const inner=(svgMask.match(/<svg[^>]*>([\s\S]*?)<\/svg>/)||[])[1]||'';
-      const col=`rgb(${centroids[c][0]},${centroids[c][1]},${centroids[c][2]})`;
-      groups.push(`<g fill='${col}'>${inner}</g>`);
+      let svgMask=await potrace(mask,opts);
+      let paths=(svgMask.match(/<path[^>]*>/g)||[]).map(p=>p.replace(/fill="[^"]*"/g,''));
+      const color=`rgb(${centroids[c][0]},${centroids[c][1]},${centroids[c][2]})`;
+      paths=paths.map(p=>p.replace('<path','<path fill="'+color+'"'));
+      groups.push(paths.join('\n'));
     }
-    lastSvg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${imgData.width} ${imgData.height}'>${groups.join('\n')}</svg>`;
+    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${imgData.width} ${imgData.height}'>${groups.join('\n')}</svg>`;
+  }
+
+  async function generateExamples(){
+    ex2.innerHTML='Generando...';ex6.innerHTML='Generando...';ex10.innerHTML='Generando...';
+    dl2.disabled=true;dl6.disabled=true;dl10.disabled=true;
+    lastEx2=await vectorizeCustom(2,60);
+    lastEx6=await vectorizeCustom(6,50);
+    lastEx10=await vectorizeCustom(10,30);
+    ex2.innerHTML=lastEx2;ex6.innerHTML=lastEx6;ex10.innerHTML=lastEx10;
+    dl2.disabled=false;dl6.disabled=false;dl10.disabled=false;
+  }
+
+  async function vectorize(){
+    if(!loadedImage||!potraceReady){alert('Primero carga una imagen y espera que Potrace esté listo');return;}
+    const K=parseInt(kInput.value);const sm=parseInt(smooth.value);
+    lastSvg=await vectorizeCustom(K,sm);
     svgPreview.innerHTML=lastSvg;
     downloadSvg.disabled=false;exportPng.disabled=false;
   }
@@ -129,10 +200,20 @@
   };
 
   exportPng.onclick=()=>{
-    const w=300,h=300;const img=new Image();
+    const w=1000,h=1000;const img=new Image();
     img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);canvas.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='design.png';a.click();});};
     img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(lastSvg)));
   };
+
+  dl2.onclick=()=>downloadExample(lastEx2,'design_2colors.svg');
+  dl6.onclick=()=>downloadExample(lastEx6,'design_6colors.svg');
+  dl10.onclick=()=>downloadExample(lastEx10,'design_10colors.svg');
+
+  function downloadExample(svg,filename){
+    if(!svg)return;
+    const blob=new Blob([svg],{type:'image/svg+xml'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  }
 </script>
 </body>
 </html>
