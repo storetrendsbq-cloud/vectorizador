@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vectorizador a Color (Profesional) - Sublimación</title>
+  <title>Vectorizador a Color (ImageTracer.js) - Sublimación</title>
   <style>
     :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#06b6d4}
     body{background:linear-gradient(180deg,#071028 0%,#071826 100%);color:#e6eef6;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;padding:24px}
@@ -42,8 +42,8 @@
       <input id="fileInput" type="file" accept="image/*">
       <label>2) Número de colores (2–12): <span id="kVal">6</span></label>
       <input id="kInput" type="range" min="2" max="12" value="6">
-      <label>3) Suavizado (0–100): <span id="smoothVal">50</span></label>
-      <input id="smoothness" type="range" min="0" max="100" value="50">
+      <label>3) Nivel de detalle (0–10): <span id="ltresVal">1</span></label>
+      <input id="ltresInput" type="range" min="0" max="10" value="1">
       <div style="margin-top:12px">
         <button id="vectorizeBtn">Vectorizar a color</button>
       </div>
@@ -54,9 +54,9 @@
 
       <div class="guide">
         <h2>Guía rápida de uso</h2>
-        <p><strong>Logos / Íconos:</strong><br> Colores = 2–4 · Suavizado = 60–80.<br> Resultado limpio, ideal para estampados simples.</p>
-        <p><strong>Ilustraciones / Dibujos:</strong><br> Colores = 5–8 · Suavizado = 40–60.<br> Conserva detalle y mantiene bordes definidos.</p>
-        <p><strong>Fotografías / Diseños complejos:</strong><br> Colores = 8–12 · Suavizado = 20–40.<br> Mantiene sombras y matices principales.</p>
+        <p><strong>Logos / Íconos:</strong><br> Colores = 2–4 · Detalle = bajo.<br> Resultado limpio, ideal para estampados simples.</p>
+        <p><strong>Ilustraciones / Dibujos:</strong><br> Colores = 5–8 · Detalle = medio.<br> Conserva detalle y mantiene bordes definidos.</p>
+        <p><strong>Fotografías / Diseños complejos:</strong><br> Colores = 8–12 · Detalle = alto.<br> Mantiene sombras y matices principales.</p>
         <p><strong>Consejo:</strong> Para sublimar, exporta siempre en PNG a 300 DPI y ajusta el tamaño en pulgadas según la prenda.</p>
         <div class="examples">
           <div>
@@ -84,19 +84,17 @@
   </div>
 </div>
 
-<script type="module">
-  import { init as potraceInit, potrace } from 'https://cdn.jsdelivr.net/npm/esm-potrace-wasm@0.4.1/dist/index.js';
-
+<script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
+<script>
   const fileInput=document.getElementById('fileInput');
   const kInput=document.getElementById('kInput');
   const kVal=document.getElementById('kVal');
-  const smooth=document.getElementById('smoothness');
-  const smoothVal=document.getElementById('smoothVal');
+  const ltresInput=document.getElementById('ltresInput');
+  const ltresVal=document.getElementById('ltresVal');
   const vectorizeBtn=document.getElementById('vectorizeBtn');
   const svgPreview=document.getElementById('svgPreview');
   const downloadSvg=document.getElementById('downloadSvg');
   const exportPng=document.getElementById('exportPng');
-
   const ex2=document.getElementById('ex2');
   const ex6=document.getElementById('ex6');
   const ex10=document.getElementById('ex10');
@@ -104,12 +102,10 @@
   const dl6=document.getElementById('dl6');
   const dl10=document.getElementById('dl10');
 
-  let loadedImage=null;let lastSvg='';let potraceReady=false;
-  let lastEx2='',lastEx6='',lastEx10='';
-  (async()=>{await potraceInit();potraceReady=true;})();
+  let loadedImage=null;let lastSvg='';let lastEx2='',lastEx6='',lastEx10='';
 
   kInput.addEventListener('input',()=>kVal.textContent=kInput.value);
-  smooth.addEventListener('input',()=>smoothVal.textContent=smooth.value);
+  ltresInput.addEventListener('input',()=>ltresVal.textContent=ltresInput.value);
 
   fileInput.addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;
@@ -118,102 +114,52 @@
     img.src=URL.createObjectURL(f);
   });
 
-  function euclid2(a,b){return (a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2;}
-
-  function sample(img,canvas){
-    const maxDim=400;
-    let scale=Math.min(maxDim/img.width,maxDim/img.height,1);
-    canvas.width=img.width*scale;canvas.height=img.height*scale;
-    const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    return ctx.getImageData(0,0,canvas.width,canvas.height);
-  }
-
-  function kmeans(data,K,it=8){
-    const n=data.length;const centroids=[];
-    for(let k=0;k<K;k++)centroids.push(data[Math.floor(Math.random()*n)].slice());
-    const assign=new Array(n).fill(0);
-    for(let t=0;t<it;t++){
-      for(let i=0;i<n;i++){
-        let best=0,bestd=euclid2(data[i],centroids[0]);
-        for(let c=1;c<K;c++){let d=euclid2(data[i],centroids[c]);if(d<bestd){bestd=d;best=c;}}
-        assign[i]=best;
-      }
-      const sums=Array.from({length:K},()=>[0,0,0]);const counts=new Array(K).fill(0);
-      for(let i=0;i<n;i++){let a=assign[i];sums[a][0]+=data[i][0];sums[a][1]+=data[i][1];sums[a][2]+=data[i][2];counts[a]++;}
-      for(let c=0;c<K;c++){
-        if(counts[c])centroids[c]=sums[c].map(x=>Math.round(x/counts[c]));
-      }
-    }
-    return centroids;
-  }
-
-  async function vectorizeCustom(K,sm){
-    if(!loadedImage||!potraceReady)return '';
-    const canvas=document.createElement('canvas');
-    const imgData=sample(loadedImage,canvas);
-    const pixels=[];for(let i=0;i<imgData.data.length;i+=4)pixels.push([imgData.data[i],imgData.data[i+1],imgData.data[i+2]]);
-    const centroids=kmeans(pixels,K,6);
-    const groups=[];
-    for(let c=0;c<K;c++){
-      const mask=document.createElement('canvas');mask.width=imgData.width;mask.height=imgData.height;
-      const mctx=mask.getContext('2d');const mimg=mctx.createImageData(imgData.width,imgData.height);
-      for(let i=0;i<pixels.length;i++){
-        let best=0,bestd=euclid2(pixels[i],centroids[0]);
-        for(let j=1;j<K;j++){let d=euclid2(pixels[i],centroids[j]);if(d<bestd){bestd=d;best=j;}}
-        const val=(best===c)?0:255;
-        mimg.data[i*4]=mimg.data[i*4+1]=mimg.data[i*4+2]=val;mimg.data[i*4+3]=255;
-      }
-      mctx.putImageData(mimg,0,0);
-      const opts={turdsize:Math.max(1,(100-sm)/2),opttolerance:sm/100};
-      let svgMask=await potrace(mask,opts);
-      let paths=(svgMask.match(/<path[^>]*>/g)||[]).map(p=>p.replace(/fill="[^"]*"/g,''));
-      const color=`rgb(${centroids[c][0]},${centroids[c][1]},${centroids[c][2]})`;
-      paths=paths.map(p=>p.replace('<path','<path fill="'+color+'"'));
-      groups.push(paths.join('\n'));
-    }
-    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${imgData.width} ${imgData.height}'>${groups.join('\n')}</svg>`;
+  function vectorizeCustom(img,K,ltres){
+    return new Promise(resolve=>{
+      ImageTracer.imageToSVG(img,(svgstr)=>{resolve(svgstr);},{
+        numberofcolors:K,
+        ltres:ltres,
+        qtres:1,
+        pathomit:1
+      });
+    });
   }
 
   async function generateExamples(){
     ex2.innerHTML='Generando...';ex6.innerHTML='Generando...';ex10.innerHTML='Generando...';
     dl2.disabled=true;dl6.disabled=true;dl10.disabled=true;
-    lastEx2=await vectorizeCustom(2,60);
-    lastEx6=await vectorizeCustom(6,50);
-    lastEx10=await vectorizeCustom(10,30);
+    lastEx2=await vectorizeCustom(loadedImage,2,1);
+    lastEx6=await vectorizeCustom(loadedImage,6,1);
+    lastEx10=await vectorizeCustom(loadedImage,10,1);
     ex2.innerHTML=lastEx2;ex6.innerHTML=lastEx6;ex10.innerHTML=lastEx10;
     dl2.disabled=false;dl6.disabled=false;dl10.disabled=false;
   }
 
   async function vectorize(){
-    if(!loadedImage||!potraceReady){alert('Primero carga una imagen y espera que Potrace esté listo');return;}
-    const K=parseInt(kInput.value);const sm=parseInt(smooth.value);
-    lastSvg=await vectorizeCustom(K,sm);
+    if(!loadedImage){alert('Primero carga una imagen');return;}
+    const K=parseInt(kInput.value);const ltres=parseInt(ltresInput.value);
+    lastSvg=await vectorizeCustom(loadedImage,K,ltres);
     svgPreview.innerHTML=lastSvg;
     downloadSvg.disabled=false;exportPng.disabled=false;
   }
 
   vectorizeBtn.onclick=vectorize;
 
-  downloadSvg.onclick=()=>{
-    const blob=new Blob([lastSvg],{type:'image/svg+xml'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='design_color.svg';a.click();
-  };
+  function downloadFile(svg,filename){
+    const blob=new Blob([svg],{type:'image/svg+xml'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  }
+
+  downloadSvg.onclick=()=>downloadFile(lastSvg,'design_color.svg');
+  dl2.onclick=()=>downloadFile(lastEx2,'design_2colors.svg');
+  dl6.onclick=()=>downloadFile(lastEx6,'design_6colors.svg');
+  dl10.onclick=()=>downloadFile(lastEx10,'design_10colors.svg');
 
   exportPng.onclick=()=>{
     const w=1000,h=1000;const img=new Image();
     img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);canvas.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='design.png';a.click();});};
     img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(lastSvg)));
   };
-
-  dl2.onclick=()=>downloadExample(lastEx2,'design_2colors.svg');
-  dl6.onclick=()=>downloadExample(lastEx6,'design_6colors.svg');
-  dl10.onclick=()=>downloadExample(lastEx10,'design_10colors.svg');
-
-  function downloadExample(svg,filename){
-    if(!svg)return;
-    const blob=new Blob([svg],{type:'image/svg+xml'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
-  }
 </script>
 </body>
 </html>
